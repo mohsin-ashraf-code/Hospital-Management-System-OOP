@@ -1,105 +1,44 @@
-#include "Doctor.h"
+#include "Doctor.h" 
 #include "utility.h"
 
-using namespace std;
-
-// --- Default Constructor ---
-Doctor::Doctor() : Person()
-{
-    specialization = new char[1];
-    *specialization = '\0';
-    contact = new char[1];
-    *contact = '\0';
+// Default Constructor
+Doctor::Doctor() {
+    id = 0;
+    name[0] = '\0';
+    password[0] = '\0';
+    specialization[0] = '\0';
+    contact[0] = '\0';
     fee = 0.0f;
 }
 
-// --- Parameterized Constructor ---
-Doctor::Doctor(int id, const char* name, const char* password, const char* spec, const char* contact, float fee) : Person(id, name, password)
-{
-    this->fee = fee;
-
-    int specLen = myStrLen(spec);
-    this->specialization = new char[specLen + 1];
-    myStrCopy(this->specialization, spec);
-
-    int contactLen = myStrLen(contact);
-    this->contact = new char[contactLen + 1];
-    myStrCopy(this->contact, contact);
+// Parameterized Constructor
+Doctor::Doctor(int docId, const char* docName, const char* docPass, const char* docSpec, const char* docContact, float docFee) {
+    id = docId;
+    myStrCopy(name, docName);
+    myStrCopy(password, docPass);
+    myStrCopy(specialization, docSpec);
+    myStrCopy(contact, docContact);
+    fee = docFee;
 }
 
-// --- Copy Constructor ---
-Doctor::Doctor(const Doctor& other) : Person(other) {
-    fee = other.fee;
-
-    specialization = new char[myStrLen(other.specialization) + 1];
-    myStrCopy(specialization, other.specialization);
-
-    contact = new char[myStrLen(other.contact) + 1];
-    myStrCopy(contact, other.contact);
-}
-
-// --- Assignment Operator ---
-Doctor& Doctor::operator=(const Doctor& other) {
-    if (this != &other) {
-        Person::operator=(other); // Call base class assignment
-
-        fee = other.fee;
-
-        delete[] specialization; // Clean up old memory
-        delete[] contact;
-
-        specialization = new char[myStrLen(other.specialization) + 1];
-        myStrCopy(specialization, other.specialization);
-
-        contact = new char[myStrLen(other.contact) + 1];
-        myStrCopy(contact, other.contact);
-    }
-    return *this;
-}
-
-// --- Destructor ---
-Doctor::~Doctor()
-{
-    delete[] specialization;
-    delete[] contact;
-}
-
-// --- Getters ---
-const char* Doctor::getSpecialization() const
-{
-    return specialization;
-}
-
-const char* Doctor::getContact() const
-{
-    return contact;
-}
-
-float Doctor::getFee() const
-{
-    return fee;
-}
-
-// --- Virtual Overrides ---
-void Doctor::displayMenu() const
-{
-    cout << "--- Doctor Menu ---\n";
-}
-
-const char* Doctor::getRole() const
-{
-    return "Doctor";
-}
+// Getters
+int Doctor::getId() const { return id; }
+const char* Doctor::getName() const { return name; }
+const char* Doctor::getPassword() const { return password; }
+const char* Doctor::getSpecialization() const { return specialization; }
+const char* Doctor::getContact() const { return contact; }
+float Doctor::getFee() const { return fee; }
 
 // --- Operator Overloads ---
-bool Doctor::operator==(int searchId) const
-{
-    return this->id == searchId;
+bool Doctor::operator==(const Doctor& other) const {
+    return this->id == other.id;
 }
 
-ostream& operator<<(ostream& os, const Doctor& d)
-{
-    // Note: We use d.getId() and d.getName() here because id and name are protected in Person
-    os << "ID: " << d.getId() << " | Name: " << d.getName() << " | Specialization: " << d.specialization << " | Contact: " << d.contact << " | Fee: PKR " << d.fee;
+bool Doctor::operator==(int targetId) const {
+    return this->id == targetId;
+}
+
+std::ostream& operator<<(std::ostream& os, const Doctor& doc) {
+    os << "Dr. " << doc.name << " (" << doc.specialization << ") - Fee: PKR " << doc.fee;
     return os;
 }

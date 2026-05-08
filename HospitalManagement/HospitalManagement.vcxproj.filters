@@ -127,5 +127,8 @@
     <Text Include="admin.txt" />
     <Text Include="patients.txt" />
     <Text Include="doctors.txt" />
+    <Text Include="appointments.txt">
+      <Filter>Source Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

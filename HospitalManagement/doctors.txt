@@ -1,1 +1,2 @@
 1,Dr. Sara Khan,Cardiology,03111234567,doc456,1500.00
+2,Butt,BRAIN,0333456789,wordpass,1000

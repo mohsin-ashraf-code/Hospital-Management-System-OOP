@@ -12,7 +12,8 @@
 #include "DoctorScreen.h"
 #include "AdminScreen.h"
 
-int main() {
+int main() 
+{
     // 1. Create window: 1920x1080, title "MediCore"
     // SFML 3 VideoMode syntax
     sf::RenderWindow window(sf::VideoMode({ 1920u, 1080u }), "MediCore");
@@ -53,22 +54,34 @@ int main() {
     sf::Clock clock;
 
     // 8. Main loop
-    while (window.isOpen()) {
+    while (window.isOpen()) 
+    {
 
         // --- EVENT POLLING (SFML 3 optional syntax) ---
-        while (const std::optional<sf::Event> event = window.pollEvent()) {
+        while (const std::optional<sf::Event> event = window.pollEvent()) 
+        {
 
             // Close window request
-            if (event->is<sf::Event::Closed>()) {
+            if (event->is<sf::Event::Closed>()) 
+            {
                 window.close();
             }
 
             // Route events to the currently active screen
-            switch (appState.currentScreen) {
-            case ScreenType::Login:   loginScreen.handleEvent(*event, window, appState); break;
-            case ScreenType::Patient: patientScreen.handleEvent(*event, window, appState); break;
-            case ScreenType::Doctor:  doctorScreen.handleEvent(*event, window, appState); break;
-            case ScreenType::Admin:   adminScreen.handleEvent(*event, window, appState); break;
+            switch (appState.currentScreen) 
+            {
+            case ScreenType::Login:   
+                loginScreen.handleEvent(*event, window, appState); 
+                break;
+            case ScreenType::Patient: 
+                patientScreen.handleEvent(*event, window, appState); 
+                break;
+            case ScreenType::Doctor:  
+                doctorScreen.handleEvent(*event, window, appState); 
+                break;
+            case ScreenType::Admin:   
+                adminScreen.handleEvent(*event, window, appState); 
+                break;
             }
         }
 
@@ -86,11 +99,20 @@ int main() {
         // --- DRAWING ---
         window.clear(sf::Color(240, 248, 255)); // A nice hospital-themed background (Alice Blue)
 
-        switch (appState.currentScreen) {
-        case ScreenType::Login:   loginScreen.draw(window); break;
-        case ScreenType::Patient: patientScreen.draw(window); break;
-        case ScreenType::Doctor:  doctorScreen.draw(window); break;
-        case ScreenType::Admin:   adminScreen.draw(window); break;
+        switch (appState.currentScreen) 
+        {
+        case ScreenType::Login:   
+            loginScreen.draw(window); 
+            break;
+        case ScreenType::Patient: 
+            patientScreen.draw(window); 
+            break;
+        case ScreenType::Doctor:  
+            doctorScreen.draw(window); 
+            break;
+        case ScreenType::Admin:   
+            adminScreen.draw(window); 
+            break;
         }
 
         window.display();

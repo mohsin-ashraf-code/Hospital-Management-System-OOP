@@ -63,19 +63,31 @@ public:
         return false; // ID not found
     }
 
-    // --- 4. Get All ---[cite: 1]
-    // Returns a pointer to the start of the array so your GUI can loop through it
-    T* getAll() 
+    // --- 4. Get All ---
+     // Returns a pointer to the start of the array so your GUI can loop through it
+    T* getAll()
     {
         return data;
     }
 
-    // --- 5. Size ---[cite: 1]
-    int size() const 
+    // --- 5. Size ---
+    int size() const
     {
         return count;
     }
+
     int getSize() const {
         return count;
+    }
+
+    // --- 6. Get At Index ---
+    // Returns a pointer to the object at a specific array index
+    T* getAt(int index)
+    {
+        if (index >= 0 && index < count)
+        {
+            return &data[index];
+        }
+        return nullptr;
     }
 };

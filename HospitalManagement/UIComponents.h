@@ -4,6 +4,10 @@
 #include <functional>
 #include "utility.h"
 
+
+#define MAX_FORM_FIELDS 6
+
+
 // --- BUTTON COMPONENT ---
 class Button {
 private:
@@ -76,4 +80,60 @@ public:
     void draw(sf::RenderWindow& window) const;
 
     bool getVisible() const;
+};
+
+//INPUT FORMS
+
+class InputForm {
+private:
+    sf::RectangleShape overlay;
+    sf::RectangleShape panel;
+    sf::Text* titleText; // <--- FIX: CHANGED TO POINTER
+
+    sf::Text* labels[MAX_FORM_FIELDS];
+    TextBox* inputs[MAX_FORM_FIELDS];
+
+    Button* btnSubmit;
+    Button* btnCancel;
+
+    int fieldCount;
+    bool active;
+
+public:
+    InputForm();
+    ~InputForm();
+
+    void init(const sf::Font& font, const char* title, const char* fieldNames[], int count);
+    void handleEvent(const sf::Event& event, sf::RenderWindow& window, std::function<void(const char**)> onSubmit);
+    void update(sf::RenderWindow& window);
+    void draw(sf::RenderWindow& window);
+
+    void show();
+    void hide();
+    bool isActive() const;
+    void clear();
+};
+
+class DataViewer {
+private:
+    sf::RectangleShape overlay;
+    sf::RectangleShape panel;
+    sf::Text* titleText;
+    sf::Text* contentText;
+    Button* btnClose;
+    bool active;
+
+public:
+    DataViewer();
+    ~DataViewer();
+
+    void init(const sf::Font& font, const char* title);
+    void handleEvent(const sf::Event& event, sf::RenderWindow& window);
+    void update(sf::RenderWindow& window);
+    void draw(sf::RenderWindow& window);
+
+    // Pass in a massive stitched-together string of all the data!
+    void show(const char* content);
+    void hide();
+    bool isActive() const;
 };

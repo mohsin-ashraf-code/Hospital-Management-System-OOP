@@ -1,29 +1,29 @@
 #pragma once
-#include "Person.h"
-#include <iostream>
+#include <iostream> 
 
-class Doctor : public Person 
-{
+class Doctor {
 private:
-    char* specialization;
-    char* contact;
+    int id;
+    char name[100];
+    char password[100];
+    char specialization[100];
+    char contact[100];
     float fee;
 
 public:
     Doctor();
-    Doctor(int id, const char* name, const char* password, const char* spec, const char* contact, float fee);
+    Doctor(int docId, const char* docName, const char* docPass, const char* docSpec, const char* docContact, float docFee);
 
-    Doctor(const Doctor& other);
-    Doctor& operator=(const Doctor& other);
-    ~Doctor() override;
-
+    int getId() const;
+    const char* getName() const;
+    const char* getPassword() const;
     const char* getSpecialization() const;
     const char* getContact() const;
     float getFee() const;
 
-    void displayMenu() const override;
-    const char* getRole() const override;
+    // Operator overloads so Storage<T> can search for Doctors!
+    bool operator==(const Doctor& other) const;
+    bool operator==(int targetId) const;
 
-    bool operator==(int searchId) const;
-    friend std::ostream& operator<<(std::ostream& os, const Doctor& d);
+    friend std::ostream& operator<<(std::ostream& os, const Doctor& doc);
 };

@@ -173,6 +173,7 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="admin.txt" />
+    <Text Include="appointments.txt" />
     <Text Include="doctors.txt" />
     <Text Include="patients.txt" />
   </ItemGroup>

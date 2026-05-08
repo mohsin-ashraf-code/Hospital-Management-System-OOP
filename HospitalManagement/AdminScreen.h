@@ -5,11 +5,12 @@
 #include "UIComponents.h"
 #include "utility.h"
 #include "Validator.h"
-
-class AdminScreen {
+using namespace sf;
+class AdminScreen 
+{
 private:
     AppState* state;
-    sf::Text* title;
+    Text* title;
     Button* buttons[8];
 
     InputForm addDoctorForm;
@@ -17,7 +18,8 @@ private:
     DataViewer dataViewer;
 
 public:
-    AdminScreen() : state(nullptr), title(nullptr) {
+    AdminScreen() : state(nullptr), title(nullptr) 
+    {
         for (int i = 0; i < 8; i++) buttons[i] = nullptr;
     }
 
@@ -26,24 +28,32 @@ public:
         for (int i = 0; i < 8; i++) delete buttons[i];
     }
 
-    void init(const sf::Font& font, AppState& appState) {
+    void init(const Font& font, AppState& appState) 
+    {
         state = &appState;
 
-        title = new sf::Text(font);
+        title = new Text(font);
         title->setString("Admin Dashboard - MediCore");
         title->setCharacterSize(40);
-        title->setFillColor(sf::Color(0, 51, 102));
+        title->setFillColor(Color(0, 51, 102));
         title->setPosition({ 50.f, 50.f });
 
-        const char* labels[] = {
-            "1. Add Doctor", "2. View All Doctors", "3. Add Patient",
-            "4. View All Patients", "5. View Appointments", "6. View Bills",
-            "7. System Summary", "8. Logout"
+        const char* labels[] = 
+        {
+            "1. Add Doctor", 
+            "2. View All Doctors", 
+            "3. Add Patient",
+            "4. View All Patients", 
+            "5. View Appointments", 
+            "6. View Bills",
+            "7. System Summary", 
+            "8. Logout"
         };
 
-        for (int i = 0; i < 8; i++) {
-            sf::Color idle = (i == 7) ? sf::Color(200, 50, 50) : sf::Color(0, 120, 215);
-            sf::Color hover = (i == 7) ? sf::Color(150, 0, 0) : sf::Color(0, 80, 160);
+        for (int i = 0; i < 8; i++) 
+        {
+            Color idle = (i == 7) ? Color(200, 50, 50) : Color(0, 120, 215);
+            Color hover = (i == 7) ? Color(150, 0, 0) : Color(0, 80, 160);
             buttons[i] = new Button({ 400.f, 50.f }, { 50.f, 150.f + (i * 60.f) }, labels[i], font, idle, hover);
         }
 
@@ -56,17 +66,20 @@ public:
         dataViewer.init(font, "Admin Records");
     }
 
-    void handleEvent(const sf::Event& event, sf::RenderWindow& window, AppState& appState) {
+    void handleEvent(const Event& event, RenderWindow& window, AppState& appState) {
 
         // --- 0. DATA VIEWER OVERLAY ---
-        if (dataViewer.isActive()) {
+        if (dataViewer.isActive()) 
+        {
             dataViewer.handleEvent(event, window);
             return;
         }
 
         // --- 1. ADD DOCTOR FORM ---
-        if (addDoctorForm.isActive()) {
-            addDoctorForm.handleEvent(event, window, [&](const char** formData) {
+        if (addDoctorForm.isActive()) 
+        {
+            addDoctorForm.handleEvent(event, window, [&](const char** formData) 
+                {
                 int newId = state->doctors.getSize() + 1;
                 float newFee = myAtof(formData[4]);
 
@@ -74,9 +87,9 @@ public:
                 state->doctors.add(newDoc);
 
                 std::ofstream file("doctors.txt", std::ios::app);
-                if (file.is_open()) {
-                    file << "\n" << newId << "," << formData[0] << "," << formData[1] << ","
-                        << formData[2] << "," << formData[3] << "," << newFee;
+                if (file.is_open()) 
+                {
+                    file << "\n" << newId << "," << formData[0] << "," << formData[1] << "," << formData[2] << "," << formData[3] << "," << newFee;
                     file.close();
                 }
                 });
@@ -84,8 +97,10 @@ public:
         }
 
         // --- 2. ADD PATIENT FORM ---
-        if (addPatientForm.isActive()) {
-            addPatientForm.handleEvent(event, window, [&](const char** formData) {
+        if (addPatientForm.isActive()) 
+        {
+            addPatientForm.handleEvent(event, window, [&](const char** formData) 
+            {
                 int newId = state->patients.getSize() + 1;
                 int newAge = Validator::charToInt(formData[1]);
                 char newGender = formData[2][0];
@@ -95,7 +110,8 @@ public:
                 state->patients.add(newPat);
 
                 std::ofstream file("patients.txt", std::ios::app);
-                if (file.is_open()) {
+                if (file.is_open()) 
+                {
                     file << "\n" << newId << "," << formData[0] << "," << newAge << ","
                         << newGender << "," << formData[3] << "," << formData[4] << "," << newBal;
                     file.close();
@@ -105,7 +121,8 @@ public:
         }
 
         // --- BACKGROUND BUTTON CLICKS ---
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < 8; i++) 
+        {
             buttons[i]->handleEvent(event, window, [&, i]() {
 
                 if (i == 0) addDoctorForm.show(); // 1. Add Doctor
@@ -170,13 +187,14 @@ public:
                                 if (lineCopy[k] == ',') { lineCopy[k] = '\0'; cols[colIdx++] = &lineCopy[k + 1]; }
                             }
 
-                            if (colIdx >= 5) {
+                            if (colIdx >= 6) { // Changed to 6
                                 char temp[256];
                                 myStrCopy(temp, "Appt ID: "); myStrCopy(temp + myStrLen(temp), cols[0]);
                                 myStrCopy(temp + myStrLen(temp), " | Pat ID: "); myStrCopy(temp + myStrLen(temp), cols[1]);
                                 myStrCopy(temp + myStrLen(temp), " | Doc ID: "); myStrCopy(temp + myStrLen(temp), cols[2]);
                                 myStrCopy(temp + myStrLen(temp), " | Date: "); myStrCopy(temp + myStrLen(temp), cols[3]);
-                                myStrCopy(temp + myStrLen(temp), " | Status: "); myStrCopy(temp + myStrLen(temp), cols[4]);
+                                myStrCopy(temp + myStrLen(temp), " | Slot: "); myStrCopy(temp + myStrLen(temp), cols[4]); // ADDED SLOT
+                                myStrCopy(temp + myStrLen(temp), " | Status: "); myStrCopy(temp + myStrLen(temp), cols[5]); // Status is cols[5]
                                 myStrCopy(temp + myStrLen(temp), "\n");
                                 myStrCopy(displayBuffer + myStrLen(displayBuffer), temp);
                             }
@@ -217,7 +235,8 @@ public:
                     dataViewer.show(displayBuffer);
                 }
 
-                else if (i == 6) { // 7. System Summary (Calculates Total Hospital Revenue!)
+                else if (i == 6) 
+                { // 7. System Summary (Calculates Total Hospital Revenue!)
                     char displayBuffer[4096]; displayBuffer[0] = '\0';
 
                     int totalDocs = state->doctors.getSize();
@@ -269,14 +288,14 @@ public:
         }
     }
 
-    void update(float dt, sf::RenderWindow& window) {
+    void update(float dt, RenderWindow& window) {
         if (dataViewer.isActive()) dataViewer.update(window);
         else if (addDoctorForm.isActive()) addDoctorForm.update(window);
         else if (addPatientForm.isActive()) addPatientForm.update(window);
         else for (int i = 0; i < 8; i++) buttons[i]->update(window);
     }
 
-    void draw(sf::RenderWindow& window) {
+    void draw(RenderWindow& window) {
         window.draw(*title);
         for (int i = 0; i < 8; i++) buttons[i]->draw(window);
 

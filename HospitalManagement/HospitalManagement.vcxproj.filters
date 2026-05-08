@@ -119,9 +119,6 @@
     <ClInclude Include="AppState.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="helpers.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="admin.txt" />

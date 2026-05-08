@@ -157,7 +157,6 @@
     <ClInclude Include="Doctor.h" />
     <ClInclude Include="DoctorScreen.h" />
     <ClInclude Include="FileHandler.h" />
-    <ClInclude Include="helpers.h" />
     <ClInclude Include="HospitalExceptions.h" />
     <ClInclude Include="LoginScreen.h" />
     <ClInclude Include="MyString.h" />

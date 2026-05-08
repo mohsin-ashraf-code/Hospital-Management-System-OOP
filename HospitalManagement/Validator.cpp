@@ -42,8 +42,8 @@ bool Validator::isValidTimeSlot(const char* slot) {
 
     // Define the 8 fixed clinic slots (HH:MM format fits in 6 chars with \0)
     const char* validSlots[8] = {
-        "09:00", "10:00", "11:00", "12:00",
-        "14:00", "15:00", "16:00", "17:00"
+    "09:00", "10:00", "11:00", "12:00",
+    "13:00", "14:00", "15:00", "16:00"
     };
 
     for (int i = 0; i < 8; i++) {

@@ -7,6 +7,7 @@
 #include "FileHandler.h"
 #include "utility.h"
 
+using namespace sf;
 class LoginScreen {
 private:
     // Internal State Tracker
@@ -16,9 +17,9 @@ private:
     int failedAttempts;
 
     // Texts
-    sf::Text* title;
-    sf::Text* subtitle;
-    sf::Text* errorText;
+     Text* title;
+     Text* subtitle;
+     Text* errorText;
 
     // State 1: Role Selection Buttons
     Button* btnPatient;
@@ -45,45 +46,45 @@ public:
         delete idInput; delete passwordInput; delete btnLogin; delete btnBack;
     }
 
-    void init(const sf::Font& font, AppState& appState) {
+    void init(const  Font& font, AppState& appState) {
         float centerX = 1920.f / 2.f;
         float centerY = 1080.f / 2.f;
 
         // Texts
-        title = new sf::Text(font);
+        title = new  Text(font);
         title->setString("Welcome to MediCore Hospital Management System");
         title->setCharacterSize(40);
-        title->setFillColor(sf::Color(0, 51, 102));
-        sf::FloatRect titleBounds = title->getLocalBounds();
+        title->setFillColor( Color(0, 51, 102));
+         FloatRect titleBounds = title->getLocalBounds();
         title->setPosition({ centerX - titleBounds.size.x / 2.f, 150.f });
 
-        subtitle = new sf::Text(font);
+        subtitle = new  Text(font);
         subtitle->setString("Select your role:");
         subtitle->setCharacterSize(30);
-        subtitle->setFillColor(sf::Color::Black);
-        sf::FloatRect subBounds = subtitle->getLocalBounds();
+        subtitle->setFillColor( Color::Black);
+         FloatRect subBounds = subtitle->getLocalBounds();
         subtitle->setPosition({ centerX - subBounds.size.x / 2.f, 250.f });
 
-        errorText = new sf::Text(font);
+        errorText = new  Text(font);
         errorText->setString("");
         errorText->setCharacterSize(24);
-        errorText->setFillColor(sf::Color::Red);
+        errorText->setFillColor( Color::Red);
         errorText->setPosition({ centerX - 200.f, centerY + 250.f });
 
         // State 1 Buttons (Role Selection)
-        btnPatient = new Button({ 400.f, 60.f }, { centerX - 200.f, 350.f }, "1. Patient", font, sf::Color(0, 120, 215), sf::Color(0, 80, 160));
-        btnDoctor = new Button({ 400.f, 60.f }, { centerX - 200.f, 430.f }, "2. Doctor", font, sf::Color(0, 120, 215), sf::Color(0, 80, 160));
-        btnAdmin = new Button({ 400.f, 60.f }, { centerX - 200.f, 510.f }, "3. Admin", font, sf::Color(0, 120, 215), sf::Color(0, 80, 160));
-        btnExit = new Button({ 400.f, 60.f }, { centerX - 200.f, 590.f }, "4. Exit", font, sf::Color(200, 50, 50), sf::Color(150, 0, 0));
+        btnPatient = new Button({ 400.f, 60.f }, { centerX - 200.f, 350.f }, "1. Patient", font,  Color(0, 120, 215),  Color(0, 80, 160));
+        btnDoctor = new Button({ 400.f, 60.f }, { centerX - 200.f, 430.f }, "2. Doctor", font,  Color(0, 120, 215),  Color(0, 80, 160));
+        btnAdmin = new Button({ 400.f, 60.f }, { centerX - 200.f, 510.f }, "3. Admin", font,  Color(0, 120, 215),  Color(0, 80, 160));
+        btnExit = new Button({ 400.f, 60.f }, { centerX - 200.f, 590.f }, "4. Exit", font,  Color(200, 50, 50),  Color(150, 0, 0));
 
         // State 2 Components (Credentials)
         idInput = new TextBox({ 400.f, 50.f }, { centerX - 200.f, 350.f }, "Enter ID", font, 10, false);
         passwordInput = new TextBox({ 400.f, 50.f }, { centerX - 200.f, 430.f }, "Enter Password", font, 50, true);
-        btnLogin = new Button({ 190.f, 60.f }, { centerX - 200.f, 510.f }, "Login", font, sf::Color(0, 150, 0), sf::Color(0, 100, 0));
-        btnBack = new Button({ 190.f, 60.f }, { centerX + 10.f, 510.f }, "Back", font, sf::Color(100, 100, 100), sf::Color(50, 50, 50));
+        btnLogin = new Button({ 190.f, 60.f }, { centerX - 200.f, 510.f }, "Login", font,  Color(0, 150, 0),  Color(0, 100, 0));
+        btnBack = new Button({ 190.f, 60.f }, { centerX + 10.f, 510.f }, "Back", font,  Color(100, 100, 100),  Color(50, 50, 50));
     }
 
-    void handleEvent(const sf::Event& event, sf::RenderWindow& window, AppState& appState) {
+    void handleEvent(const  Event& event,  RenderWindow& window, AppState& appState) {
         if (currentState == LoginState::Locked) return; // Ignore clicks if locked
 
         if (currentState == LoginState::SelectRole) {
@@ -182,7 +183,7 @@ public:
         }
     }
 
-    void update(float dt, sf::RenderWindow& window) {
+    void update(float dt,  RenderWindow& window) {
         if (currentState == LoginState::SelectRole) {
             btnPatient->update(window);
             btnDoctor->update(window);
@@ -197,7 +198,7 @@ public:
         }
     }
 
-    void draw(sf::RenderWindow& window) {
+    void draw( RenderWindow& window) {
         window.draw(*title);
         window.draw(*subtitle);
 

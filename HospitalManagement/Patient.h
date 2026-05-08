@@ -2,11 +2,12 @@
 #include "Person.h"
 #include <iostream>
 
-class Patient : public Person {
+class Patient : public Person 
+{
 private:
     int age;
     char gender;
-    char* contact; // Dynamically allocated, no static arrays!
+    char* contact;
     float balance;
 
 public:

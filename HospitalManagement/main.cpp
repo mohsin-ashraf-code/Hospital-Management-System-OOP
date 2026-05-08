@@ -16,13 +16,14 @@ int main()
 {
     // 1. Create window: 1920x1080, title "MediCore"
     // SFML 3 VideoMode syntax
-    sf::RenderWindow window(sf::VideoMode({ 1920u, 1080u }), "MediCore");
+    RenderWindow window( VideoMode({ 1920u, 1080u }), "MediCore");
     window.setFramerateLimit(60); // Keeps CPU usage low
 
     // 2. Load ONE font from file
-    sf::Font font;
+    Font font;
     // Note: SFML 3 standardizes resource loading methods to openFromFile
-    if (!font.openFromFile("arial.ttf")) {
+    if (!font.openFromFile("arial.ttf")) 
+    {
         std::cerr << "CRITICAL ERROR: Failed to load arial.ttf" << std::endl;
         return 1;
     }
@@ -50,19 +51,19 @@ int main()
     doctorScreen.init(font, appState);
     adminScreen.init(font, appState);
 
-    // 7. sf::Clock for delta time
-    sf::Clock clock;
+    // 7.  Clock for delta time
+    Clock clock;
 
     // 8. Main loop
     while (window.isOpen()) 
     {
 
         // --- EVENT POLLING (SFML 3 optional syntax) ---
-        while (const std::optional<sf::Event> event = window.pollEvent()) 
+        while (const std::optional< Event> event = window.pollEvent()) 
         {
 
             // Close window request
-            if (event->is<sf::Event::Closed>()) 
+            if (event->is< Event::Closed>()) 
             {
                 window.close();
             }
@@ -97,7 +98,7 @@ int main()
         }
 
         // --- DRAWING ---
-        window.clear(sf::Color(240, 248, 255)); // A nice hospital-themed background (Alice Blue)
+        window.clear( Color(240, 248, 255)); // A nice hospital-themed background (Alice Blue)
 
         switch (appState.currentScreen) 
         {

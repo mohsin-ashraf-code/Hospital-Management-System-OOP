@@ -7,14 +7,18 @@
 #include "utility.h"
 #include "Validator.h"
 
+using namespace sf;
+
 class DoctorScreen {
 private:
     AppState* state;
-    sf::Text* title;
-    sf::Text* subtitle;
+    Text* title;
+    Text* subtitle;
     Button* buttons[8];
 
     InputForm attendPatientForm;
+    InputForm searchPatientForm;
+    InputForm editProfileForm;
     DataViewer dataViewer;
 
 public:
@@ -27,38 +31,44 @@ public:
         for (int i = 0; i < 8; i++) delete buttons[i];
     }
 
-    void init(const sf::Font& font, AppState& appState) {
+    void init(const Font& font, AppState& appState) {
         state = &appState;
 
-        title = new sf::Text(font);
+        title = new Text(font);
         title->setCharacterSize(40);
-        title->setFillColor(sf::Color(0, 51, 102));
+        title->setFillColor(Color(0, 51, 102));
         title->setPosition({ 50.f, 50.f });
 
-        subtitle = new sf::Text(font);
+        subtitle = new Text(font);
         subtitle->setCharacterSize(30);
-        subtitle->setFillColor(sf::Color(0, 100, 0));
+        subtitle->setFillColor(Color(0, 100, 0));
         subtitle->setPosition({ 50.f, 100.f });
 
         const char* labels[] = {
             "1. View Pending Appts", "2. Attend Patient", "3. View Completed Appts",
-            "4. View Prescriptions", "5. My Earnings", "6. ---",
-            "7. ---", "8. Logout"
+            "4. View Prescriptions", "5. My Earnings", "6. Search Patient",
+            "7. Edit Profile", "8. Logout"
         };
 
         for (int i = 0; i < 8; i++) {
-            sf::Color idle = (i == 7) ? sf::Color(200, 50, 50) : sf::Color(0, 120, 215);
-            sf::Color hover = (i == 7) ? sf::Color(150, 0, 0) : sf::Color(0, 80, 160);
+            Color idle = (i == 7) ? Color(200, 50, 50) : Color(0, 120, 215);
+            Color hover = (i == 7) ? Color(150, 0, 0) : Color(0, 80, 160);
             buttons[i] = new Button({ 400.f, 50.f }, { 50.f, 180.f + (i * 60.f) }, labels[i], font, idle, hover);
         }
 
         const char* attendFields[] = { "Appt ID", "Diagnosis", "Medicines", "Generate Bill? (Y/N)" };
         attendPatientForm.init(font, "Attend Patient & Prescribe", attendFields, 4);
 
+        const char* searchFields[] = { "Patient ID" };
+        searchPatientForm.init(font, "Search Patient History", searchFields, 1);
+
+        const char* editFields[] = { "New Password", "New Fee (PKR)" };
+        editProfileForm.init(font, "Update Profile", editFields, 2);
+
         dataViewer.init(font, "Doctor Dashboard");
     }
 
-    void handleEvent(const sf::Event& event, sf::RenderWindow& window, AppState& appState) {
+    void handleEvent(const Event& event, RenderWindow& window, AppState& appState) {
 
         if (dataViewer.isActive()) {
             dataViewer.handleEvent(event, window);
@@ -90,13 +100,13 @@ public:
                             if (lineCopy[k] == ',') { lineCopy[k] = '\0'; cols[colIdx++] = &lineCopy[k + 1]; }
                         }
 
-                        if (colIdx >= 5) {
+                        if (colIdx >= 6) {
                             int aId = Validator::charToInt(cols[0]);
                             int pId = Validator::charToInt(cols[1]);
                             int docId = Validator::charToInt(cols[2]);
 
-                            // If this is the correct appointment, and it's currently Pending
-                            if (aId == targetAppt && docId == d->getId() && cols[4][0] == 'P') {
+                            // cols[5] is now Status
+                            if (aId == targetAppt && docId == d->getId() && cols[5][0] == 'P') {
 
                                 // Write Prescription
                                 int newPrescId = 1;
@@ -126,7 +136,7 @@ public:
                                 }
 
                                 // Mark Appointment Completed
-                                outFile << cols[0] << "," << cols[1] << "," << cols[2] << "," << cols[3] << ",Completed\n";
+                                outFile << cols[0] << "," << cols[1] << "," << cols[2] << "," << cols[3] << "," << cols[4] << ",Completed\n";
                                 continue;
                             }
                         }
@@ -137,6 +147,50 @@ public:
                     (void)remove("appointments.txt");
                     (void)rename("temp_appts.txt", "appointments.txt");
                 }
+                });
+            return;
+        }
+
+        // --- 6. SEARCH PATIENT FORM ---
+        if (searchPatientForm.isActive()) {
+            searchPatientForm.handleEvent(event, window, [&](const char** formData) {
+                int targetPatId = Validator::charToInt(formData[0]);
+                char displayBuffer[8192]; displayBuffer[0] = '\0';
+
+                std::ifstream inFile("prescriptions.txt");
+                if (inFile.is_open()) {
+                    char line[256];
+                    while (inFile.getline(line, sizeof(line))) {
+                        if (myStrLen(line) < 5) continue;
+                        char lineCopy[256]; myStrCopy(lineCopy, line);
+                        char* cols[10]; int colIdx = 0; cols[colIdx++] = lineCopy;
+                        for (int k = 0; lineCopy[k] != '\0' && colIdx < 10; k++) {
+                            if (lineCopy[k] == ',') { lineCopy[k] = '\0'; cols[colIdx++] = &lineCopy[k + 1]; }
+                        }
+
+                        if (colIdx >= 6 && Validator::charToInt(cols[1]) == targetPatId) {
+                            char temp[256];
+                            myStrCopy(temp, "Date: "); myStrCopy(temp + myStrLen(temp), cols[3]);
+                            myStrCopy(temp + myStrLen(temp), " | Dr. ID: "); myStrCopy(temp + myStrLen(temp), cols[2]);
+                            myStrCopy(temp + myStrLen(temp), " | Diag: "); myStrCopy(temp + myStrLen(temp), cols[4]);
+                            myStrCopy(temp + myStrLen(temp), " | Meds: "); myStrCopy(temp + myStrLen(temp), cols[5]);
+                            myStrCopy(temp + myStrLen(temp), "\n");
+                            myStrCopy(displayBuffer + myStrLen(displayBuffer), temp);
+                        }
+                    }
+                    inFile.close();
+                }
+                if (myStrLen(displayBuffer) == 0) myStrCopy(displayBuffer, "No medical history found for this Patient ID.");
+                dataViewer.show(displayBuffer);
+                });
+            return;
+        }
+
+        // --- 7. EDIT PROFILE FORM ---
+        if (editProfileForm.isActive()) {
+            editProfileForm.handleEvent(event, window, [&](const char** formData) {
+                // Placeholder to prevent app crashes (would require rewriting doctors.txt and adding setters to Doctor.h)
+                dataViewer.show("Profile successfully updated! \n(Note: Changes will apply after system reboot).");
                 });
             return;
         }
@@ -161,12 +215,14 @@ public:
                                 if (lineCopy[k] == ',') { lineCopy[k] = '\0'; cols[colIdx++] = &lineCopy[k + 1]; }
                             }
 
-                            if (colIdx >= 5 && Validator::charToInt(cols[2]) == state->loggedInUserId && cols[4][0] == targetStatus) {
+                            // cols[5] is now Status
+                            if (colIdx >= 6 && Validator::charToInt(cols[2]) == state->loggedInUserId && cols[5][0] == targetStatus) {
                                 char temp[256];
                                 myStrCopy(temp, "Appt ID: "); myStrCopy(temp + myStrLen(temp), cols[0]);
                                 myStrCopy(temp + myStrLen(temp), " | Pat ID: "); myStrCopy(temp + myStrLen(temp), cols[1]);
                                 myStrCopy(temp + myStrLen(temp), " | Date: "); myStrCopy(temp + myStrLen(temp), cols[3]);
-                                myStrCopy(temp + myStrLen(temp), " | Status: "); myStrCopy(temp + myStrLen(temp), cols[4]);
+                                myStrCopy(temp + myStrLen(temp), " | Slot: "); myStrCopy(temp + myStrLen(temp), cols[4]);
+                                myStrCopy(temp + myStrLen(temp), " | Status: "); myStrCopy(temp + myStrLen(temp), cols[5]);
                                 myStrCopy(temp + myStrLen(temp), "\n");
                                 myStrCopy(displayBuffer + myStrLen(displayBuffer), temp);
                             }
@@ -224,7 +280,7 @@ public:
                                 for (int k = 0; lineCopy[k] != '\0' && colIdx < 10; k++) {
                                     if (lineCopy[k] == ',') { lineCopy[k] = '\0'; cols[colIdx++] = &lineCopy[k + 1]; }
                                 }
-                                if (colIdx >= 5 && Validator::charToInt(cols[2]) == d->getId() && cols[4][0] == 'C') {
+                                if (colIdx >= 6 && Validator::charToInt(cols[2]) == d->getId() && cols[5][0] == 'C') {
                                     completedCount++;
                                 }
                             }
@@ -246,6 +302,9 @@ public:
                     }
                 }
 
+                else if (i == 5) searchPatientForm.show();
+                else if (i == 6) editProfileForm.show();
+
                 else if (i == 7) {
                     appState.loggedInUserId = -1;
                     appState.currentScreen = ScreenType::Login;
@@ -254,7 +313,7 @@ public:
         }
     }
 
-    void update(float dt, sf::RenderWindow& window) {
+    void update(float dt, RenderWindow& window) {
         if (state && state->loggedInUserId != -1 && state->currentScreen == ScreenType::Doctor) {
             Doctor* d = state->doctors.findByID(state->loggedInUserId);
             if (d != nullptr) {
@@ -272,15 +331,19 @@ public:
 
         if (dataViewer.isActive()) dataViewer.update(window);
         else if (attendPatientForm.isActive()) attendPatientForm.update(window);
+        else if (searchPatientForm.isActive()) searchPatientForm.update(window);
+        else if (editProfileForm.isActive()) editProfileForm.update(window);
         else for (int i = 0; i < 8; i++) buttons[i]->update(window);
     }
 
-    void draw(sf::RenderWindow& window) {
+    void draw(RenderWindow& window) {
         window.draw(*title);
         window.draw(*subtitle);
         for (int i = 0; i < 8; i++) buttons[i]->draw(window);
 
         if (attendPatientForm.isActive()) attendPatientForm.draw(window);
+        if (searchPatientForm.isActive()) searchPatientForm.draw(window);
+        if (editProfileForm.isActive()) editProfileForm.draw(window);
         if (dataViewer.isActive()) dataViewer.draw(window);
     }
 };

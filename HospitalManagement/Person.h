@@ -1,26 +1,22 @@
 #pragma once
+#include "STRING.h"
+
 class Person 
 {
 protected:
     int id;
-    char* name;
-    char* password;
+    STRING name;
+    STRING password;
 
 public:
-    // Constructors & Destructor
     Person();
-    Person(int id, const char* name, const char* password);
+    Person(int pId, const char* pName, const char* pPass);
+    virtual ~Person();
 
-    Person(const Person& other);
-    Person& operator=(const Person& other);
-
-    // Getters
-    int getId() const;
+    int getID() const;
     const char* getName() const;
     const char* getPassword() const;
 
-    virtual void displayMenu() const = 0;
     virtual const char* getRole() const = 0;
-
-    virtual ~Person();
+    virtual void displayDetails() const = 0;
 };

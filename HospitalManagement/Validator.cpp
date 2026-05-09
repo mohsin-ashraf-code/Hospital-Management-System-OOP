@@ -1,111 +1,18 @@
 #include "Validator.h"
 #include "utility.h"
 
-using namespace std;
-
-// --- 1. Date Validation (DD-MM-YYYY) ---
-bool Validator::isValidDate(const char* date) {
-    if (date == nullptr || myStrLen(date) != 10) return false;
-
-    // Check dashes
-    if (*(date + 2) != '-' || *(date + 5) != '-') return false;
-
-    // Verify all other characters are digits
-    for (int i = 0; i < 10; i++) {
-        if (i == 2 || i == 5) continue;
-        if (*(date + i) < '0' || *(date + i) > '9') return false;
+int Validator::charToInt(const char* str) 
+{
+    if (!str) 
+    {
+        return 0;
     }
-
-    // Extract numbers manually
-    int dd = (*(date + 0) - '0') * 10 + (*(date + 1) - '0');
-    int mm = (*(date + 3) - '0') * 10 + (*(date + 4) - '0');
-    int yyyy = (*(date + 6) - '0') * 1000 + (*(date + 7) - '0') * 100 + (*(date + 8) - '0') * 10 + (*(date + 9) - '0');
-
-    // Basic range checks (Assuming current year is 2026 based on system time)
-    if (yyyy < 2026) return false;
-    if (mm < 1 || mm > 12) return false;
-    if (dd < 1 || dd > 31) return false;
-
-    // Optional: Strict day checks for specific months
-    if ((mm == 4 || mm == 6 || mm == 9 || mm == 11) && dd > 30) return false;
-    if (mm == 2) {
-        bool isLeap = (yyyy % 4 == 0 && yyyy % 100 != 0) || (yyyy % 400 == 0);
-        if (dd > (isLeap ? 29 : 28)) return false;
-    }
-
-    return true;
-}
-
-// --- 2. Time Slot Validation ---
-bool Validator::isValidTimeSlot(const char* slot) {
-    if (slot == nullptr) return false;
-
-    // Define the 8 fixed clinic slots (HH:MM format fits in 6 chars with \0)
-    const char* validSlots[8] = {
-    "09:00", "10:00", "11:00", "12:00",
-    "13:00", "14:00", "15:00", "16:00"
-    };
-
-    for (int i = 0; i < 8; i++) {
-        if (myStrEqual(slot, validSlots[i])) {
-            return true;
-        }
-    }
-    return false;
-}
-
-// --- 3. Contact Validation ---
-bool Validator::isValidContact(const char* contact) {
-    if (contact == nullptr || myStrLen(contact) != 11) return false;
-
-    for (int i = 0; i < 11; i++) {
-        if (*(contact + i) < '0' || *(contact + i) > '9') {
-            return false;
-        }
-    }
-    return true;
-}
-
-// --- 4. Password Validation ---
-bool Validator::isValidPassword(const char* pass) {
-    if (pass == nullptr) return false;
-    return myStrLen(pass) >= 6;
-}
-
-// --- 5. Positive Float Validation (for fees and balances) ---
-bool Validator::isPositiveFloat(const char* str) {
-    if (str == nullptr || myStrLen(str) == 0) return false;
-
-    int dots = 0;
-    int i = 0;
-    while (*(str + i) != '\0') {
-        if (*(str + i) == '.') {
-            dots++;
-        }
-        else if (*(str + i) < '0' || *(str + i) > '9') {
-            return false; // Contains invalid characters (like letters)
-        }
-        i++;
-    }
-
-    if (dots > 1) return false; // e.g., "15.00.5" is invalid
-
-    float val = charToFloat(str);
-    return val > 0.0f;
-}
-
-// --- 6. Menu Choice Validation ---
-bool Validator::isValidMenuChoice(int choice, int min, int max) {
-    return (choice >= min && choice <= max);
-}
-
-// --- 7. Manual String to Integer ---
-int Validator::charToInt(const char* str) {
-    if (str == nullptr) return 0;
     int res = 0;
     int i = 0;
-    while (*(str + i) != '\0') {
-        if (*(str + i) >= '0' && *(str + i) <= '9') {
+    while (*(str + i) != '\0') 
+    {
+        if (*(str + i) >= '0' && *(str + i) <= '9') 
+        {
             res = res * 10 + (*(str + i) - '0');
         }
         i++;
@@ -113,28 +20,94 @@ int Validator::charToInt(const char* str) {
     return res;
 }
 
-// --- 8. Manual String to Float ---
-float Validator::charToFloat(const char* str) {
-    if (str == nullptr) return 0.0f;
-    float res = 0.0f;
-    float fraction = 1.0f;
-    bool decimal = false;
-    int i = 0;
-
-    while (*(str + i) != '\0') {
-        if (*(str + i) == '.') {
-            decimal = true;
-        }
-        else if (*(str + i) >= '0' && *(str + i) <= '9') {
-            if (!decimal) {
-                res = res * 10.0f + (*(str + i) - '0');
-            }
-            else {
-                fraction *= 0.1f;
-                res = res + (*(str + i) - '0') * fraction;
-            }
-        }
-        i++;
+float Validator::charToFloat(const char* str) 
+{
+    if (!str) 
+    {
+        return 0.0f;
     }
-    return res;
+    return myAtof(str);
+}
+
+bool Validator::isValidID(const char* id) {
+    if (!id || myStrLen(id) == 0) return false;
+    for (int i = 0; *(id + i) != '\0'; i++) {
+        if (*(id + i) < '0' || *(id + i) > '9') return false;
+    }
+    return charToInt(id) > 0;
+}
+
+// Enforces exact DD-MM-YYYY format
+bool Validator::isValidDate(const char* date) {
+    if (!date || myStrLen(date) != 10) return false;
+    if (*(date + 2) != '-' || *(date + 5) != '-') return false;
+
+    for (int i = 0; i < 10; i++) {
+        if (i == 2 || i == 5) continue; // Skip the dashes
+        if (*(date + i) < '0' || *(date + i) > '9') return false;
+    }
+
+    int dd = (*(date + 0) - '0') * 10 + (*(date + 1) - '0');
+    int mm = (*(date + 3) - '0') * 10 + (*(date + 4) - '0');
+
+    if (mm < 1 || mm > 12) return false;
+    if (dd < 1 || dd > 31) return false;
+    return true;
+}
+
+// Basic check for time slot (e.g. "10:00AM")
+bool Validator::isValidTimeSlot(const char* slot) {
+    int len = myStrLen(slot);
+    if (len < 6 || len > 7) return false;
+
+    char secondToLast = *(slot + len - 2);
+    char last = *(slot + len - 1);
+
+    // Must end in AM or PM
+    if ((secondToLast != 'A' && secondToLast != 'P') || last != 'M') return false;
+
+    // Must contain a colon
+    bool hasColon = false;
+    for (int i = 0; i < len - 2; i++) {
+        if (*(slot + i) == ':') {
+            hasColon = true;
+            break;
+        }
+    }
+    return hasColon;
+}
+
+// Enforces exactly 11 numeric digits
+bool Validator::isValidContact(const char* contact) {
+    if (!contact || myStrLen(contact) != 11) return false;
+    for (int i = 0; i < 11; i++) {
+        if (*(contact + i) < '0' || *(contact + i) > '9') return false;
+    }
+    return true;
+}
+
+bool Validator::isValidPassword(const char* password) {
+    if (!password || myStrLen(password) < 4) return false;
+    return true;
+}
+
+bool Validator::isPositiveFloat(const char* val) {
+    if (!val || myStrLen(val) == 0) return false;
+    int dots = 0;
+    for (int i = 0; *(val + i) != '\0'; i++) {
+        if (*(val + i) == '.') {
+            dots++;
+            if (dots > 1) return false;
+        }
+        else if (*(val + i) < '0' || *(val + i) > '9') {
+            return false;
+        }
+    }
+    return charToFloat(val) >= 0.0f;
+}
+
+bool Validator::isValidMenuChoice(const char* choice, int min, int max) {
+    if (!isValidID(choice)) return false;
+    int c = charToInt(choice);
+    return (c >= min && c <= max);
 }

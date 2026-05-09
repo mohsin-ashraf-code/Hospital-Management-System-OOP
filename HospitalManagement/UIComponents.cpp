@@ -55,6 +55,7 @@ void Button::draw( RenderWindow& window) const {
 TextBox::TextBox( Vector2f size,  Vector2f position, const char* placeholder, const  Font& font, int maxLen, bool isPassword)
     : textDisplay(font), placeholderText(font), cursor(0), maxLen(maxLen), isFocused(false), isPassword(isPassword) {
 
+    buffer = new char[maxLen];
     buffer[0] = '\0';
 
     rect.setSize(size);
@@ -71,6 +72,10 @@ TextBox::TextBox( Vector2f size,  Vector2f position, const char* placeholder, co
     placeholderText.setCharacterSize(20);
     placeholderText.setFillColor( Color(150, 150, 150));
     placeholderText.setPosition({ position.x + 10.f, position.y + (size.y / 2.f) - 12.f });
+}
+
+TextBox::~TextBox() {
+    delete[] buffer;
 }
 
 void TextBox::update( RenderWindow& window) {
@@ -115,10 +120,11 @@ void TextBox::handleEvent(const  Event& event, const  RenderWindow& window) {
 
 void TextBox::updateDisplay() {
     if (isPassword) {
-        char stars[100];
+        char* stars = new char[maxLen];
         for (int i = 0; i < cursor; i++) stars[i] = '*';
         stars[cursor] = '\0';
         textDisplay.setString(stars);
+        delete[] stars;
     }
     else {
         textDisplay.setString(buffer);
@@ -256,8 +262,10 @@ void MsgBox::draw( RenderWindow& window) const {
 // INPUT FORM IMPLEMENTATION
 // ==========================================
 
-InputForm::InputForm() : fieldCount(0), active(false), titleText(nullptr), btnSubmit(nullptr), btnCancel(nullptr) {
-    for (int i = 0; i < MAX_FORM_FIELDS; i++) {
+InputForm::InputForm() : fieldCount(0), active(false), titleText(nullptr), btnSubmit(nullptr), btnCancel(nullptr), maxFields(6) {
+    labels = new Text * [maxFields];
+    inputs = new TextBox * [maxFields];
+    for (int i = 0; i < maxFields; i++) {
         labels[i] = nullptr;
         inputs[i] = nullptr;
     }
@@ -265,17 +273,19 @@ InputForm::InputForm() : fieldCount(0), active(false), titleText(nullptr), btnSu
 
 InputForm::~InputForm() {
     delete titleText; // <--- FIX: CLEANUP POINTER
-    for (int i = 0; i < MAX_FORM_FIELDS; i++) {
+    for (int i = 0; i < maxFields; i++) {
         delete labels[i];
         delete inputs[i];
     }
+    delete[] labels;
+    delete[] inputs;
     delete btnSubmit;
     delete btnCancel;
 }
 
 void InputForm::init(const  Font& font, const char* title, const char* fieldNames[], int count) {
     fieldCount = count;
-    if (fieldCount > MAX_FORM_FIELDS) fieldCount = MAX_FORM_FIELDS;
+    if (fieldCount > maxFields) fieldCount = maxFields;
 
     overlay.setSize({ 1920.f, 1080.f });
     overlay.setFillColor( Color(0, 0, 0, 150));
@@ -324,11 +334,12 @@ void InputForm::handleEvent(const  Event& event,  RenderWindow& window, std::fun
         });
 
     btnSubmit->handleEvent(event, window, [&]() {
-        const char* results[MAX_FORM_FIELDS];
+        const char** results = new const char* [fieldCount];
         for (int i = 0; i < fieldCount; i++) {
             results[i] = inputs[i]->getText();
         }
         onSubmit(results);
+        delete[] results;
         hide();
         });
 }

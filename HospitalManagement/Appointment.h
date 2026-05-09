@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include "STRING.h"
 
 class Appointment 
 {
@@ -7,9 +8,9 @@ private:
     int id;
     int patientId;
     int doctorId;
-    char* date;      // Dynamically allocated (replaces date[11])
-    char* timeSlot;  // Dynamically allocated (replaces timeSlot[6])
-    char* status;    // Dynamically allocated (replaces status[12])
+    STRING date;
+    STRING timeSlot;
+    STRING status;
 
 public:
     // Constructors & Destructor

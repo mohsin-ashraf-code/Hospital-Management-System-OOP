@@ -5,7 +5,6 @@ template <typename T>
 class Storage 
 {
 private:
-    // Project.pdf explicitly mandates an internal static array of size 100
     T data[100];
     int count;
 
@@ -20,13 +19,13 @@ public:
     // Uses the Assignment Operator (Rule of Three) we built to safely copy the object
     bool add(const T& item) 
     {
-        if (count < 100) 
+        if (count < 100)
         {
             data[count] = item;
             count++;
             return true;
         }
-        return false; // Storage is full
+        return false;
     }
 
     // --- 2. Find By ID ---

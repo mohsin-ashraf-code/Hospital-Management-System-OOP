@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include "STRING.h"
 
 class Bill {
 private:
@@ -7,8 +8,8 @@ private:
     int patientId;
     int appointmentId;
     float amount;
-    char* status; // Dynamically allocated (e.g., "unpaid", "paid", "cancelled")
-    char* date;   // Dynamically allocated (e.g., "15-04-2025")
+    STRING status;
+    STRING date;
 
 public:
     // Constructors & Destructor

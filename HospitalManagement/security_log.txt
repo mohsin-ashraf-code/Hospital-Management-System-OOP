@@ -1,18 +1,12 @@
-CURRENT_TIMESTAMP,Admin,1,Failed Login
-06-05-2026 23:58:31,Patient,1,Failed Login
-07-05-2026 00:00:40,Patient,1,Failed Login
-07-05-2026 00:04:15,Patient,1,Failed Login
-07-05-2026 00:05:16,Patient,1,Failed Login
-07-05-2026 00:05:17,Patient,1,LOCKED OUT - 3 Fails
-07-05-2026 00:05:56,Doctor,1,Failed Login
-07-05-2026 00:06:10,Doctor,1,Failed Login
-07-05-2026 00:12:08,Patient,1,Failed Login
-07-05-2026 00:13:52,Patient,1,Failed Login
-07-05-2026 00:24:45,Patient,1,Failed Login
-07-05-2026 00:25:02,Patient,1,Failed Login
-07-05-2026 00:25:23,Doctor,1,LOCKED OUT - 3 Fails
-08-05-2026 15:55:03,Doctor,2,Failed Login
-08-05-2026 15:55:07,Doctor,2,Failed Login
-08-05-2026 15:55:14,Doctor,2,LOCKED OUT - 3 Fails
-08-05-2026 15:55:53,Doctor,2,Failed Login
-08-05-2026 15:56:01,Doctor,2,Failed Login
+2026-05-08 23:21:11,Admin,1,SUCCESS
+2026-05-09 02:46:37,Admin,1,FAILED
+2026-05-09 02:46:45,Admin,1,SUCCESS
+2026-05-09 02:47:23,Patient,1,SUCCESS
+2026-05-09 02:47:47,Admin,1,FAILED
+2026-05-09 02:47:53,Admin,1,SUCCESS
+2026-05-09 02:48:41,Patient,1,SUCCESS
+2026-05-09 16:15:23,Patient,1,SUCCESS
+2026-05-09 16:29:25,Admin,1,SUCCESS
+2026-05-09 16:29:47,Doctor,1,SUCCESS
+2026-05-09 17:42:08,Doctor,1,SUCCESS
+2026-05-09 17:42:37,Patient,1,SUCCESS

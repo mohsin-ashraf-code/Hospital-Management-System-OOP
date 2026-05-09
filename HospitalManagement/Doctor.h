@@ -1,13 +1,15 @@
 #pragma once
 #include <iostream> 
+#include "STRING.h"
 
-class Doctor {
+class Doctor 
+{
 private:
     int id;
-    char name[100];
-    char password[100];
-    char specialization[100];
-    char contact[100];
+    STRING name;
+    STRING password;
+    STRING specialization;
+    STRING contact;
     float fee;
 
 public:
@@ -20,6 +22,9 @@ public:
     const char* getSpecialization() const;
     const char* getContact() const;
     float getFee() const;
+
+    void setPassword(const char* newPass); // ADD THIS
+    void setFee(float newFee);             // ADD THIS
 
     // Operator overloads so Storage<T> can search for Doctors!
     bool operator==(const Doctor& other) const;

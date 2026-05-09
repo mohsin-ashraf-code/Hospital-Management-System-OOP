@@ -1,4 +1,5 @@
 #pragma once
+#include "STRING.h"
 
 class Prescription 
 {
@@ -7,9 +8,9 @@ private:
     int appointmentId;
     int patientId;
     int doctorId;
-    char* date;           // Dynamically allocated (No static arrays here!)
-    char medicines[500];  // Fixed array (Mandated by Project.pdf[cite: 1])
-    char notes[300];      // Fixed array (Mandated by Project.pdf[cite: 1])
+    STRING date;
+    char medicines[500];
+    char notes[300];
 
 public:
     // Constructors & Destructor

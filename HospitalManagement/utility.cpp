@@ -1,103 +1,49 @@
-// #define _CRT_SECURE_NO_WARNINGS // MUST BE LINE 1! Shuts off MSVC security warnings.
-
+#define _CRT_SECURE_NO_WARNINGS //Needed for Visual Studio to not give LocalTime Error
 #include "utility.h"
 #include <ctime>
 
 // ==========================================
-// BASIC STRING OPERATIONS
+// BASIC STRING OPERATIONS (Pointer Arithmetic)
 // ==========================================
 int myStrLen(const char* str) {
     if (!str) return 0;
     int len = 0;
-    while (str[len] != '\0') len++;
+    while (*(str + len) != '\0') len++;
     return len;
 }
 
 void myStrCopy(char* dest, const char* src) {
     if (!dest || !src) return;
     int i = 0;
-    while (src[i] != '\0') {
-        dest[i] = src[i];
+    while (*(src + i) != '\0') {
+        *(dest + i) = *(src + i);
         i++;
     }
-    dest[i] = '\0';
+    *(dest + i) = '\0';
 }
 
 bool myStrEqual(const char* str1, const char* str2) {
     if (!str1 || !str2) return false;
     int i = 0;
-    while (str1[i] != '\0' && str2[i] != '\0') {
-        if (str1[i] != str2[i]) return false;
+    while (*(str1 + i) != '\0' && *(str2 + i) != '\0') {
+        if (*(str1 + i) != *(str2 + i)) return false;
         i++;
     }
-    return str1[i] == str2[i]; // True if both hit '\0' at the same time
+    return *(str1 + i) == *(str2 + i);
 }
 
 // ==========================================
-// TIME & LOGGING (No <cstdio> allowed)
-// ==========================================
-void getCurrentTimestamp(char* buffer, int maxLen) {
-    time_t now = time(0);
-    tm ltm;
-
-    // Microsoft's secure version
-    localtime_s(&ltm, &now);
-
-    int index = 0;
-    char temp[16];
-
-    // Helper lambda-like logic to append numbers with leading zeros
-    auto appendZeroPadded = [&](int value) {
-        if (value < 10) buffer[index++] = '0';
-        myIntToStr(value, temp);
-        for (int i = 0; temp[i] != '\0'; i++) buffer[index++] = temp[i];
-        };
-
-    // 1. Day
-    appendZeroPadded(ltm.tm_mday);
-    buffer[index++] = '-';
-
-    // 2. Month
-    appendZeroPadded(1 + ltm.tm_mon);
-    buffer[index++] = '-';
-
-    // 3. Year (4 digits, no padding needed)
-    myIntToStr(1900 + ltm.tm_year, temp);
-    for (int i = 0; temp[i] != '\0'; i++) buffer[index++] = temp[i];
-    buffer[index++] = ' ';
-
-    // 4. Hour
-    appendZeroPadded(ltm.tm_hour);
-    buffer[index++] = ':';
-
-    // 5. Minute
-    appendZeroPadded(ltm.tm_min);
-    buffer[index++] = ':';
-
-    // 6. Second
-    appendZeroPadded(ltm.tm_sec);
-
-    buffer[index] = '\0'; // Null terminate the final string
-}
-
-// ==========================================
-// CUSTOM STRING TOKENIZER (Replaces strtok)
+// CUSTOM PARSERS
 // ==========================================
 char* myStrtok(char* str, char delim, char** context) {
-    if (str == nullptr) str = *context;
-    if (str == nullptr || *str == '\0') return nullptr;
+    if (!str) str = *context;
+    if (!str) return nullptr;
 
-    char* start = str;
+    while (*str == delim) str++;
+    if (*str == '\0') return nullptr;
 
-    while (*str != '\0' && *str != delim) {
-        // KILL INVISIBLE CHARACTERS: \r or \n
-        if (*str == '\r' || *str == '\n') {
-            *str = '\0';
-            *context = nullptr;
-            return start;
-        }
-        str++;
-    }
+    char* tokenStart = str;
+    while (*str != '\0' && *str != delim) str++;
 
     if (*str == delim) {
         *str = '\0';
@@ -106,50 +52,75 @@ char* myStrtok(char* str, char delim, char** context) {
     else {
         *context = nullptr;
     }
-
-    return start;
+    return tokenStart;
 }
 
-// ==========================================
-// CUSTOM FLOAT PARSER (Replaces atof)
-// ==========================================
 float myAtof(const char* str) {
     if (!str) return 0.0f;
-    float result = 0.0f;
+    float res = 0.0f;
     float fraction = 1.0f;
-    bool inFraction = false;
-    bool isNegative = (*str == '-');
+    bool isNegative = false;
+    bool hasDecimal = false;
+    int i = 0;
 
-    if (isNegative) str++;
+    if (*(str + i) == '-') {
+        isNegative = true;
+        i++;
+    }
 
-    while (*str != '\0') {
-        if (*str >= '0' && *str <= '9') {
-            if (inFraction) {
+    while (*(str + i) != '\0') {
+        if (*(str + i) == '.') {
+            hasDecimal = true;
+        }
+        else if (*(str + i) >= '0' && *(str + i) <= '9') {
+            if (hasDecimal) {
                 fraction *= 0.1f;
-                result += (*str - '0') * fraction;
+                res += (*(str + i) - '0') * fraction;
             }
             else {
-                result = result * 10.0f + (*str - '0');
+                res = res * 10.0f + (*(str + i) - '0');
             }
         }
-        else if (*str == '.') {
-            inFraction = true;
-        }
-        else {
-            break;
-        }
-        str++;
+        i++;
     }
-    return isNegative ? -result : result;
+    return isNegative ? -res : res;
+}
+
+bool myCaseInsensitiveEqual(const char* str1, const char* str2)
+{
+    if (!str1 || !str2) return false;
+
+    int i = 0;
+    while (*(str1 + i) != '\0' && *(str2 + i) != '\0') 
+    {
+        char c1 = *(str1 + i);
+        char c2 = *(str2 + i);
+
+        if (c1 >= 'A' && c1 <= 'Z') 
+        {
+            c1 += 32;
+        }
+        if (c2 >= 'A' && c2 <= 'Z') {
+            c2 += 32;
+        }
+
+        if (c1 != c2) {
+            return false;
+        }
+        i++;
+    }
+
+    // Ensure both strings end at the exact same length
+    return *(str1 + i) == '\0' && *(str2 + i) == '\0';
 }
 
 // ==========================================
-// CUSTOM INT TO STRING
+// CUSTOM CONVERTERS
 // ==========================================
 void myIntToStr(int val, char* buf) {
     if (val == 0) {
-        buf[0] = '0';
-        buf[1] = '\0';
+        *(buf + 0) = '0';
+        *(buf + 1) = '\0';
         return;
     }
 
@@ -161,26 +132,24 @@ void myIntToStr(int val, char* buf) {
         val = -val;
     }
 
-    char tmp[16];
+    char* tmp = new char[16];
     while (val > 0) {
-        tmp[i++] = '0' + (val % 10);
+        *(tmp + i++) = '0' + (val % 10);
         val /= 10;
     }
 
     int j = 0;
     if (isNegative) {
-        buf[j++] = '-';
+        *(buf + j++) = '-';
     }
 
     while (i > 0) {
-        buf[j++] = tmp[--i];
+        *(buf + j++) = *(tmp + --i);
     }
-    buf[j] = '\0';
+    *(buf + j) = '\0';
+    delete[] tmp;
 }
 
-// ==========================================
-// CUSTOM FLOAT TO STRING (2 Decimal Places)
-// ==========================================
 void myFloatToStr(float val, char* buf) {
     bool isNegative = (val < 0);
     if (isNegative) val = -val;
@@ -188,34 +157,73 @@ void myFloatToStr(float val, char* buf) {
     int whole = (int)val;
     int frac = (int)((val - whole) * 100 + 0.5f);
 
-    if (frac >= 100) {
-        whole += 1;
-        frac -= 100;
-    }
-
-    if (isNegative) {
-        buf[0] = '-';
-        myIntToStr(whole, buf + 1);
-    }
-    else {
-        myIntToStr(whole, buf);
-    }
+    char* tmpWhole = new char[16];
+    myIntToStr(whole, tmpWhole);
 
     int i = 0;
-    while (buf[i] != '\0') i++;
-
-    buf[i++] = '.';
-
-    if (frac < 10) {
-        buf[i++] = '0';
-    }
-
-    char f[8];
-    myIntToStr(frac, f);
+    if (isNegative) *(buf + i++) = '-';
 
     int j = 0;
-    while (f[j] != '\0') {
-        buf[i++] = f[j++];
+    while (*(tmpWhole + j) != '\0') {
+        *(buf + i++) = *(tmpWhole + j++);
     }
-    buf[i] = '\0';
+
+    *(buf + i++) = '.';
+
+    if (frac < 10) {
+        *(buf + i++) = '0';
+        *(buf + i++) = '0' + frac;
+    }
+    else {
+        *(buf + i++) = '0' + (frac / 10);
+        *(buf + i++) = '0' + (frac % 10);
+    }
+    *(buf + i) = '\0';
+    delete[] tmpWhole;
+}
+
+// ==========================================
+// TIME & LOGGING
+// ==========================================
+void getCurrentTimestamp(char* buffer, int maxLen) {
+    time_t now = time(0);
+
+    // Clean, standard, universal C++. No #if or #else needed!
+    struct tm* tstruct = localtime(&now);
+
+    int year = tstruct->tm_year + 1900;
+    int month = tstruct->tm_mon + 1;
+    int day = tstruct->tm_mday;
+    int hour = tstruct->tm_hour;
+    int min = tstruct->tm_min;
+    int sec = tstruct->tm_sec;
+
+    // (The rest of the pointer arithmetic formatting remains exactly the same!)
+    int i = 0;
+    *(buffer + i++) = '0' + (year / 1000);
+    *(buffer + i++) = '0' + ((year / 100) % 10);
+    *(buffer + i++) = '0' + ((year / 10) % 10);
+    *(buffer + i++) = '0' + (year % 10);
+    *(buffer + i++) = '-';
+
+    *(buffer + i++) = '0' + (month / 10);
+    *(buffer + i++) = '0' + (month % 10);
+    *(buffer + i++) = '-';
+
+    *(buffer + i++) = '0' + (day / 10);
+    *(buffer + i++) = '0' + (day % 10);
+    *(buffer + i++) = ' ';
+
+    *(buffer + i++) = '0' + (hour / 10);
+    *(buffer + i++) = '0' + (hour % 10);
+    *(buffer + i++) = ':';
+
+    *(buffer + i++) = '0' + (min / 10);
+    *(buffer + i++) = '0' + (min % 10);
+    *(buffer + i++) = ':';
+
+    *(buffer + i++) = '0' + (sec / 10);
+    *(buffer + i++) = '0' + (sec % 10);
+
+    *(buffer + i) = '\0';
 }

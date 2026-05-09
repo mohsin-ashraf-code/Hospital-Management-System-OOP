@@ -15,3 +15,5 @@ float myAtof(const char* str);
 // Custom Converters (Replacing sprintf/to_string)
 void myIntToStr(int val, char* buf);
 void myFloatToStr(float val, char* buf);
+
+bool myCaseInsensitiveEqual(const char* str1, const char* str2);

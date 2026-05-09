@@ -134,16 +134,24 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="admin.cpp" />
+    <ClCompile Include="AdminScreen.cpp" />
     <ClCompile Include="Appointment.cpp" />
     <ClCompile Include="Bill.cpp" />
     <ClCompile Include="Doctor.cpp" />
+    <ClCompile Include="DoctorScreen.cpp" />
     <ClCompile Include="FileHandler.cpp" />
-    <ClCompile Include="HospitalExceptions.cpp" />
-    <ClCompile Include="MyString.cpp" />
+    <ClCompile Include="FileNotFoundException.cpp" />
+    <ClCompile Include="HospitalException.cpp" />
+    <ClCompile Include="InsufficientFundsException.cpp" />
+    <ClCompile Include="InvalidInputException.cpp" />
+    <ClCompile Include="LoginScreen.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Patient.cpp" />
+    <ClCompile Include="PatientScreen.cpp" />
     <ClCompile Include="Person.cpp" />
     <ClCompile Include="Prescription.cpp" />
+    <ClCompile Include="SlotUnavailableException.cpp" />
+    <ClCompile Include="STRING.cpp" />
     <ClCompile Include="UIComponents.cpp" />
     <ClCompile Include="utility.cpp" />
     <ClCompile Include="Validator.cpp" />
@@ -157,15 +165,19 @@
     <ClInclude Include="Doctor.h" />
     <ClInclude Include="DoctorScreen.h" />
     <ClInclude Include="FileHandler.h" />
-    <ClInclude Include="HospitalExceptions.h" />
+    <ClInclude Include="FileNotFoundException.h" />
+    <ClInclude Include="HospitalException.h" />
+    <ClInclude Include="InsufficientFundsException.h" />
+    <ClInclude Include="InvalidInputException.h" />
     <ClInclude Include="LoginScreen.h" />
-    <ClInclude Include="MyString.h" />
     <ClInclude Include="Patient.h" />
     <ClInclude Include="PatientScreen.h" />
     <ClInclude Include="Person.h" />
     <ClInclude Include="Prescription.h" />
     <ClInclude Include="ScreenManager.h" />
+    <ClInclude Include="SlotUnavailableException.h" />
     <ClInclude Include="Storage.h" />
+    <ClInclude Include="STRING.h" />
     <ClInclude Include="UIComponents.h" />
     <ClInclude Include="utility.h" />
     <ClInclude Include="Validator.h" />
@@ -173,8 +185,12 @@
   <ItemGroup>
     <Text Include="admin.txt" />
     <Text Include="appointments.txt" />
+    <Text Include="discharged.txt" />
     <Text Include="doctors.txt" />
     <Text Include="patients.txt" />
+    <Text Include="prescriptions.txt" />
+    <Text Include="security_log.txt" />
+    <Text Include="temp_bills.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

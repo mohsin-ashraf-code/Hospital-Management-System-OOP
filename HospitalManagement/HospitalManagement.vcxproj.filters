@@ -18,9 +18,6 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MyString.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Person.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -51,17 +48,41 @@
     <ClCompile Include="Validator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="HospitalExceptions.cpp">
+    <ClCompile Include="HospitalException.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="UIComponents.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="STRING.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LoginScreen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AdminScreen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DoctorScreen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PatientScreen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FileNotFoundException.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="InsufficientFundsException.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="InvalidInputException.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SlotUnavailableException.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="MyString.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="Person.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -95,7 +116,7 @@
     <ClInclude Include="Validator.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="HospitalExceptions.h">
+    <ClInclude Include="HospitalException.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="UIComponents.h">
@@ -119,12 +140,39 @@
     <ClInclude Include="AppState.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="STRING.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FileNotFoundException.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="InsufficientFundsException.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="InvalidInputException.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SlotUnavailableException.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="admin.txt" />
     <Text Include="patients.txt" />
     <Text Include="doctors.txt" />
     <Text Include="appointments.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="prescriptions.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="security_log.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="temp_bills.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="discharged.txt">
       <Filter>Source Files</Filter>
     </Text>
   </ItemGroup>

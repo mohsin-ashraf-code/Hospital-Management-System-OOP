@@ -10,8 +10,8 @@ Bill::Bill() {
     appointmentId = 0;
     amount = 0.0f;
 
-    status = new char[1]; *status = '\0';
-    date = new char[1]; *date = '\0';
+    status = STRING("");
+    date = STRING("");
 }
 
 // --- Parameterized Constructor ---
@@ -21,11 +21,8 @@ Bill::Bill(int id, int patientId, int appointmentId, float amount, const char* s
     this->appointmentId = appointmentId;
     this->amount = amount;
 
-    this->status = new char[myStrLen(status) + 1];
-    myStrCopy(this->status, status);
-
-    this->date = new char[myStrLen(date) + 1];
-    myStrCopy(this->date, date);
+    this->status = STRING(status);
+    this->date = STRING(date);
 }
 
 // --- Copy Constructor ---
@@ -35,57 +32,40 @@ Bill::Bill(const Bill& other) {
     appointmentId = other.appointmentId;
     amount = other.amount;
 
-    status = new char[myStrLen(other.status) + 1];
-    myStrCopy(status, other.status);
-
-    date = new char[myStrLen(other.date) + 1];
-    myStrCopy(date, other.date);
+    status = other.status;
+    date = other.date;
 }
 
 // --- Assignment Operator ---
 Bill& Bill::operator=(const Bill& other) 
 {
     if (this != &other) {
-        // Free old memory first to avoid leaks
-        delete[] status;
-        delete[] date;
-
-        // Copy new data
         id = other.id;
         patientId = other.patientId;
         appointmentId = other.appointmentId;
         amount = other.amount;
-
-        status = new char[myStrLen(other.status) + 1];
-        myStrCopy(status, other.status);
-
-        date = new char[myStrLen(other.date) + 1];
-        myStrCopy(date, other.date);
+        status = other.status;
+        date = other.date;
     }
     return *this;
 }
 
 // --- Destructor ---
-Bill::~Bill() {
-    delete[] status;
-    delete[] date;
-}
+Bill::~Bill() {}
 
 // --- Getters ---
 int Bill::getId() const { return id; }
 int Bill::getPatientId() const { return patientId; }
 int Bill::getAppointmentId() const { return appointmentId; }
 float Bill::getAmount() const { return amount; }
-const char* Bill::getStatus() const { return status; }
-const char* Bill::getDate() const { return date; }
+const char* Bill::getStatus() const { return status.getData(); }
+const char* Bill::getDate() const { return date.getData(); }
 
 // --- Setters ---
 void Bill::setStatus(const char* newStatus) 
 {
     if (newStatus != nullptr) {
-        delete[] status; // delete the old status string
-        status = new char[myStrLen(newStatus) + 1];
-        myStrCopy(status, newStatus);
+        status = STRING(newStatus);
     }
 }
 

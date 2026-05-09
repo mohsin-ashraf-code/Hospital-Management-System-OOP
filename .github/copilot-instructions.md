@@ -1,0 +1,8 @@
+# Copilot Instructions
+
+## Project Guidelines
+- Project requirements for Hospital Management System (Project.pdf): Submission rules include a single zip file named RollNumber.zip containing all .h and .cpp files and a README.md with a link to the public GitHub repository; push the complete project to GitHub and include the link in README.
+- Code rules: Each class must be declared in its own .h file and defined in its own .cpp file; avoid using std::vector and std::string or built-in string functions like strcmp/strtok; do not use global variables or goto statements; all pointer allocations must be dynamic (no static arrays); ensure to delete allocated memory to prevent memory leaks; pass pointers to functions instead of using [] subscripts; implement modular code with separate input/output functions; all data must be read from and written to .txt files for persistence, and files should be updated immediately on changes.
+- Required operator overloads include: `==` on Appointment to detect conflicts; `<<` on Patient, Doctor, and Appointment; `-=` on Patient; and `==` on Patient and Doctor.
+- Required classes include: Person (abstract), Patient, Doctor, Admin, Appointment, Bill, Prescription, Storage<T> with a static array T data[100], FileHandler as the sole file I/O handler, Validator, HospitalException, and derived exceptions such as FileNotFoundException, InsufficientFundsException, InvalidInputException, and SlotUnavailableException.
+- Other functional requirements include detailed user menus, validations, file formats, sorting without using library sort, date/time handling, and constraints as specified in the Project.pdf.

@@ -12,26 +12,24 @@
 #include "DoctorScreen.h"
 #include "AdminScreen.h"
 
+using namespace std;
+
 int main() 
 {
-    // 1. Create window: 1920x1080, title "MediCore"
-    // SFML 3 VideoMode syntax
+    
     RenderWindow window( VideoMode({ 1920u, 1080u }), "MediCore");
-    window.setFramerateLimit(60); // Keeps CPU usage low
+    window.setFramerateLimit(60);
 
-    // 2. Load ONE font from file
     Font font;
     // Note: SFML 3 standardizes resource loading methods to openFromFile
     if (!font.openFromFile("arial.ttf")) 
     {
-        std::cerr << "CRITICAL ERROR: Failed to load arial.ttf" << std::endl;
+        cerr << "CRITICAL ERROR: Failed to load arial.ttf" << endl;
         return 1;
     }
 
-    // 3. Declare AppState
     AppState appState;
 
-    // 4. Call FileHandler::load* for all 6 data types
     FileHandler::loadPatients(appState.patients);
     FileHandler::loadDoctors(appState.doctors);
     FileHandler::loadAdmin(appState.admin);
@@ -90,11 +88,20 @@ int main()
         float dt = clock.restart().asSeconds();
 
         // --- UPDATE ROUTING ---
-        switch (appState.currentScreen) {
-        case ScreenType::Login:   loginScreen.update(dt, window); break;
-        case ScreenType::Patient: patientScreen.update(dt, window); break;
-        case ScreenType::Doctor:  doctorScreen.update(dt, window); break;
-        case ScreenType::Admin:   adminScreen.update(dt, window); break;
+        switch (appState.currentScreen)
+        {
+        case ScreenType::Login:   
+            loginScreen.update(dt, window); 
+            break;
+        case ScreenType::Patient: 
+            patientScreen.update(dt, window); 
+            break;
+        case ScreenType::Doctor:  
+            doctorScreen.update(dt, window); 
+            break;
+        case ScreenType::Admin:  
+            adminScreen.update(dt, window); 
+            break;
         }
 
         // --- DRAWING ---
@@ -118,8 +125,6 @@ int main()
 
         window.display();
     }
-
-    // Optional: Clean up dynamically allocated Admin on exit
     delete appState.admin;
 
     return 0;

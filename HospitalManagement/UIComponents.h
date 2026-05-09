@@ -5,9 +5,6 @@
 #include "utility.h"
 using namespace sf;
 
-#define MAX_FORM_FIELDS 6
-
-
 // --- BUTTON COMPONENT ---
 class Button {
 private:
@@ -30,7 +27,7 @@ private:
      RectangleShape rect;
      Text textDisplay;
      Text placeholderText;
-    char buffer[100];
+    char* buffer;
     int cursor;
     int maxLen;
     bool isFocused;
@@ -40,6 +37,7 @@ private:
 
 public:
     TextBox( Vector2f size,  Vector2f position, const char* placeholder, const  Font& font, int maxLen, bool isPassword = false);
+    ~TextBox();
     void handleEvent(const  Event& event, const  RenderWindow& window);
     void update( RenderWindow& window);
     void draw( RenderWindow& window) const;
@@ -90,8 +88,9 @@ private:
      RectangleShape panel;
      Text* titleText; // <--- FIX: CHANGED TO POINTER
 
-     Text* labels[MAX_FORM_FIELDS];
-    TextBox* inputs[MAX_FORM_FIELDS];
+    Text** labels;
+    TextBox** inputs;
+    int maxFields;
 
     Button* btnSubmit;
     Button* btnCancel;

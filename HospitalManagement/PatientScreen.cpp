@@ -1,9 +1,7 @@
 #include "PatientScreen.h"
 #include "Validator.h"
 #include "FileHandler.h"
-
-extern sf::String intToStr(int num);
-extern sf::String floatToStr(float num);
+#include "utility.h"
 
 PatientScreen::PatientScreen() : state(nullptr), title(nullptr), balanceText(nullptr), buttons(nullptr), bookState(BookingState::None), selectedDocId(-1), sessionalTopUpAttempts(0) {}
 
@@ -42,14 +40,12 @@ void PatientScreen::init(const sf::Font& font, AppState& appState) {
     state = &appState;
 
     title = new sf::Text(font);
-    title->setCharacterSize(35);
-    title->setFillColor(sf::Color::Cyan);
-    title->setPosition({ 50.f, 30.f });
+    title->setCharacterSize(52); // Large Title
+    title->setFillColor(sf::Color::Black); // Black Text for maximum contrast on light background
 
     balanceText = new sf::Text(font);
-    balanceText->setCharacterSize(20);
-    balanceText->setFillColor(sf::Color::Green);
-    balanceText->setPosition({ 50.f, 80.f });
+    balanceText->setCharacterSize(26); // Large clean Subtitle
+    balanceText->setFillColor(sf::Color(0, 150, 0)); // Vibrant medical green
 
     const char* labels[] = {
         "1. Book Appointment", "2. Cancel Appointment", "3. View My Appointments",
@@ -57,13 +53,22 @@ void PatientScreen::init(const sf::Font& font, AppState& appState) {
         "7. Top Up Balance", "8. Logout"
     };
 
+    // Centered Dual-Column calculations:
+    // Button width: 500, Column gap: 100. Total width = 1100.
+    // X Offset = (1920 - 1100) / 2 = 410.
+    float btnWidth = 500.f;
+    float btnHeight = 75.f;
+    float gapY = 35.f;
+
     buttons = new Button * [8];
     for (int i = 0; i < 8; i++) {
-        sf::Color idle = (i == 7) ? sf::Color(200, 50, 50) : sf::Color(0, 102, 204);
-        sf::Color hover = (i == 7) ? sf::Color(150, 0, 0) : sf::Color(0, 80, 160);
-        float xPos = (i < 4) ? 50.f : 400.f;
-        float yPos = 140.f + ((i % 4) * 80.f);
-        *(buttons + i) = new Button({ 300.f, 50.f }, { xPos, yPos }, *(labels + i), font, idle, hover);
+        sf::Color idle = (i == 7) ? sf::Color(165, 55, 55) : sf::Color(45, 95, 145);
+        sf::Color hover = (i == 7) ? sf::Color(200, 75, 75) : sf::Color(60, 120, 180);
+
+        float xPos = (i < 4) ? 410.f : 1010.f; // Split evenly into columns
+        float yPos = 350.f + ((i % 4) * (btnHeight + gapY));
+
+        *(buttons + i) = new Button({ btnWidth, btnHeight }, { xPos, yPos }, *(labels + i), font, idle, hover);
     }
 
     dataViewer.init(font, "Patient Dashboard Services");
@@ -447,8 +452,20 @@ void PatientScreen::update(float dt, sf::RenderWindow& window) {
     if (state && state->loggedInUserId != -1) {
         Patient* p = state->patients.findByID(state->loggedInUserId);
         if (p) {
-            if (title) title->setString("Patient Board - Welcome, " + sf::String(p->getName()));
-            if (balanceText) balanceText->setString("Cleared Account Balance: PKR " + floatToStr(p->getBalance()));
+            if (title) {
+                title->setString("Patient Board - Welcome, " + sf::String(p->getName()));
+                // Calculate centering coordinates dynamically
+                sf::FloatRect titleBounds = title->getLocalBounds();
+                title->setOrigin({ titleBounds.position.x + titleBounds.size.x / 2.0f, titleBounds.position.y + titleBounds.size.y / 2.0f });
+                title->setPosition({ 1920.f / 2.0f, 150.f });
+            }
+            if (balanceText) {
+                balanceText->setString("Cleared Account Balance: PKR " + floatToStr(p->getBalance()));
+                // Calculate centering coordinates dynamically
+                sf::FloatRect balBounds = balanceText->getLocalBounds();
+                balanceText->setOrigin({ balBounds.position.x + balBounds.size.x / 2.0f, balBounds.position.y + balBounds.size.y / 2.0f });
+                balanceText->setPosition({ 1920.f / 2.0f, 240.f });
+            }
         }
     }
 

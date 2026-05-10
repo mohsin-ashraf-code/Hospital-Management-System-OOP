@@ -16,7 +16,10 @@ Button::Button(sf::Vector2f size, sf::Vector2f position, const char* label, cons
 
     text = new sf::Text(font);
     text->setString(label);
-    text->setCharacterSize(18);
+
+    // Aesthetic upgrade: Text size automatically scales with button height (approx 42%)
+    unsigned int scaledCharSize = static_cast<unsigned int>(size.y * 0.42f);
+    text->setCharacterSize(scaledCharSize);
     text->setFillColor(sf::Color::White);
 
     sf::FloatRect textBounds = text->getLocalBounds();
@@ -82,8 +85,15 @@ void InputForm::init(const sf::Font& font, const char* title, const char** field
     activeField = 0;
     active = false;
 
-    background = new sf::RectangleShape({ 600.f, 150.f + (count * 70.f) });
-    background->setPosition({ 100.f, 50.f });
+    float formWidth = 600.f;
+    float formHeight = 150.f + (count * 75.f);
+
+    // Dynamically calculate centering offsets on a 1920x1080 projection
+    float startX = (1920.f - formWidth) / 2.0f;
+    float startY = (1080.f - formHeight) / 2.0f;
+
+    background = new sf::RectangleShape({ formWidth, formHeight });
+    background->setPosition({ startX, startY });
     background->setFillColor(sf::Color(30, 30, 30, 245));
     background->setOutlineThickness(2.f);
     background->setOutlineColor(sf::Color::Cyan);
@@ -92,7 +102,7 @@ void InputForm::init(const sf::Font& font, const char* title, const char** field
     formTitle->setString(title);
     formTitle->setCharacterSize(24);
     formTitle->setFillColor(sf::Color::Cyan);
-    formTitle->setPosition({ 120.f, 70.f });
+    formTitle->setPosition({ startX + 50.f, startY + 40.f });
 
     labels = new sf::Text * [count];
     inputBoxes = new sf::RectangleShape * [count];
@@ -104,10 +114,10 @@ void InputForm::init(const sf::Font& font, const char* title, const char** field
         (*(labels + i))->setString(*(fields + i));
         (*(labels + i))->setCharacterSize(16);
         (*(labels + i))->setFillColor(sf::Color::White);
-        (*(labels + i))->setPosition({ 120.f, 120.f + (i * 70.f) });
+        (*(labels + i))->setPosition({ startX + 50.f, startY + 95.f + (i * 75.f) });
 
-        *(inputBoxes + i) = new sf::RectangleShape({ 400.f, 35.f });
-        (*(inputBoxes + i))->setPosition({ 120.f, 145.f + (i * 70.f) });
+        *(inputBoxes + i) = new sf::RectangleShape({ 500.f, 35.f });
+        (*(inputBoxes + i))->setPosition({ startX + 50.f, startY + 120.f + (i * 75.f) });
         (*(inputBoxes + i))->setFillColor(sf::Color::Black);
         (*(inputBoxes + i))->setOutlineThickness(1.f);
         (*(inputBoxes + i))->setOutlineColor(sf::Color(100, 100, 100));
@@ -115,14 +125,14 @@ void InputForm::init(const sf::Font& font, const char* title, const char** field
         *(inputTexts + i) = new sf::Text(font);
         (*(inputTexts + i))->setCharacterSize(16);
         (*(inputTexts + i))->setFillColor(sf::Color::Green);
-        (*(inputTexts + i))->setPosition({ 130.f, 150.f + (i * 70.f) });
+        (*(inputTexts + i))->setPosition({ startX + 60.f, startY + 125.f + (i * 75.f) });
 
         (*(fieldValues + i)).clear();
     }
 
-    float btnY = 160.f + (count * 70.f);
-    submitBtn = new Button({ 180.f, 45.f }, { 120.f, btnY }, "Submit", font, sf::Color(0, 150, 0), sf::Color(0, 200, 0));
-    cancelBtn = new Button({ 180.f, 45.f }, { 340.f, btnY }, "Cancel", font, sf::Color(150, 0, 0), sf::Color(200, 0, 0));
+    float btnY = startY + 150.f + (count * 75.f) - 60.f;
+    submitBtn = new Button({ 200.f, 45.f }, { startX + 50.f, btnY }, "Submit", font, sf::Color(0, 150, 0), sf::Color(0, 200, 0));
+    cancelBtn = new Button({ 200.f, 45.f }, { startX + 350.f, btnY }, "Cancel", font, sf::Color(150, 0, 0), sf::Color(200, 0, 0));
 }
 
 void InputForm::show() {
@@ -173,7 +183,7 @@ void InputForm::handleEvent(const sf::Event& event, sf::RenderWindow& window, st
     }
 
     if (const auto* textEvent = event.getIf<sf::Event::TextEntered>()) {
-        if (textEvent->unicode == 8) { // Manual pointer arithmetic backspace
+        if (textEvent->unicode == 8) {
             const char* current = (*(fieldValues + activeField)).get();
             int len = Validator::myStrLen(current);
             if (len > 0) {
@@ -185,12 +195,12 @@ void InputForm::handleEvent(const sf::Event& event, sf::RenderWindow& window, st
                 delete[] temp;
             }
         }
-        else if (textEvent->unicode == 9) { // Tab
+        else if (textEvent->unicode == 9) {
             (*(inputBoxes + activeField))->setOutlineColor(sf::Color(100, 100, 100));
             activeField = (activeField + 1) % fieldCount;
             (*(inputBoxes + activeField))->setOutlineColor(sf::Color::Cyan);
         }
-        else if (textEvent->unicode == 13) { // Enter
+        else if (textEvent->unicode == 13) {
             const char** outData = new const char* [fieldCount];
             for (int k = 0; k < fieldCount; k++) *(outData + k) = (*(fieldValues + k)).get();
             onSubmit(outData);
@@ -235,24 +245,30 @@ DataViewer::~DataViewer() {
 
 void DataViewer::init(const sf::Font& font, const char* title) {
     active = false;
-    background = new sf::RectangleShape({ 650.f, 500.f });
-    background->setPosition({ 75.f, 50.f });
+
+    float width = 750.f;
+    float height = 550.f;
+    float startX = (1920.f - width) / 2.0f;
+    float startY = (1080.f - height) / 2.0f;
+
+    background = new sf::RectangleShape({ width, height });
+    background->setPosition({ startX, startY });
     background->setFillColor(sf::Color(20, 20, 20, 250));
     background->setOutlineThickness(3.f);
     background->setOutlineColor(sf::Color::Green);
 
     titleText = new sf::Text(font);
     titleText->setString(title);
-    titleText->setCharacterSize(22);
+    titleText->setCharacterSize(24);
     titleText->setFillColor(sf::Color::Green);
-    titleText->setPosition({ 95.f, 75.f });
+    titleText->setPosition({ startX + 40.f, startY + 40.f });
 
     contentText = new sf::Text(font);
-    contentText->setCharacterSize(14);
+    contentText->setCharacterSize(16);
     contentText->setFillColor(sf::Color::White);
-    contentText->setPosition({ 95.f, 120.f });
+    contentText->setPosition({ startX + 40.f, startY + 100.f });
 
-    closeBtn = new Button({ 120.f, 40.f }, { 340.f, 490.f }, "Dismiss", font, sf::Color(50, 50, 50), sf::Color(80, 80, 80));
+    closeBtn = new Button({ 150.f, 45.f }, { startX + (width / 2.0f) - 75.f, startY + height - 70.f }, "Dismiss", font, sf::Color(50, 50, 50), sf::Color(80, 80, 80));
 }
 
 void DataViewer::show(sf::String text) {

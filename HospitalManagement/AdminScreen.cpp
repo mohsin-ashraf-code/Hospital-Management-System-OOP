@@ -2,33 +2,13 @@
 #include "AdminScreen.h"
 #include "Validator.h"
 #include "FileHandler.h"
+#include "utility.h"
 #include <fstream>
 #include <ctime>
 
-// --- POINTER-SAFE STRING GENERATORS ---
-sf::String intToStr(int num) {
-    if (num == 0) return "0";
-    sf::String res = "";
-    bool neg = (num < 0);
-    if (neg) num = -num;
-    while (num > 0) {
-        res = sf::String((char)('0' + (num % 10))) + res;
-        num /= 10;
-    }
-    return neg ? "-" + res : res;
-}
-
-sf::String floatToStr(float num) {
-    int intPart = static_cast<int>(num);
-    int decPart = static_cast<int>((num - intPart) * 100);
-    if (decPart < 0) decPart = -decPart;
-    return intToStr(intPart) + "." + (decPart < 10 ? "0" : "") + intToStr(decPart);
-}
-// --------------------------------------
-
 AdminScreen::AdminScreen() : state(nullptr), title(nullptr) {
     for (int i = 0; i < 10; i++) {
-        *(buttons + i) = nullptr;
+        *(buttons + i) = nullptr; // Rule XIV Compliant
     }
 }
 
@@ -119,8 +99,10 @@ void AdminScreen::handleEvent(const sf::Event& event, sf::RenderWindow& window, 
             }
 
             int newId = state->doctors.getSize() > 0 ? (*(state->doctors.getAt(state->doctors.getSize() - 1))).getId() + 1 : 1;
-            Doctor d(newId, name, spec, contact, pass, Validator::charToFloat(feeStr));
+            float fee = myAtof(feeStr);
 
+            // CORRECTED ORDER: ID, Name, Specialization, Contact, Password, Fee
+            Doctor d(newId, name, spec, contact, pass, fee);
             state->doctors.add(d);
             FileHandler::appendDoctor(d);
 
@@ -143,7 +125,7 @@ void AdminScreen::handleEvent(const sf::Event& event, sf::RenderWindow& window, 
             }
 
             if (hasPending) {
-                dataViewer.show("Cannot remove doctor with pending appointments. Cancel or reassign them first.");
+                dataViewer.show("Cannot remove doctor with pending appointments.");
                 return;
             }
 
@@ -226,7 +208,7 @@ void AdminScreen::handleEvent(const sf::Event& event, sf::RenderWindow& window, 
                 sf::String display = "--- ALL APPOINTMENTS ---\n";
                 for (int j = 0; j < state->appointments.getSize(); j++) {
                     Appointment* a = state->appointments.getAt(j);
-                    display += "ID: " + intToStr(a->getId()) + " | P_ID: " + intToStr(a->getPatientId()) + " | D_ID: " + intToStr(a->getDoctorId()) + " | Date: " + sf::String(a->getDate()) + " | " + sf::String(a->getStatus()) + "\n";
+                    display += "ID: " + intToStr(a->getId()) + " | P_ID: " + intToStr(a->getPatientId()) + " | D_ID: " + intToStr(a->getDoctorId()) + " | Date: " + sf::String(a->getDate()) + " | Status: " + sf::String(a->getStatus()) + "\n";
                 }
                 dataViewer.show(display);
             }

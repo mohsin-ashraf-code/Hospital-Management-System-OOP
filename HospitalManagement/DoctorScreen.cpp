@@ -2,55 +2,61 @@
 #include "DoctorScreen.h"
 #include "Validator.h"
 #include "FileHandler.h"
+#include "utility.h"
 #include <ctime>
 
-extern sf::String intToStr(int num);
-extern sf::String floatToStr(float num);
+DoctorScreen::DoctorScreen() : state(nullptr), title(nullptr), specText(nullptr), buttons(nullptr), prescStep(PrescStep::None), activePrescApptId(-1) 
+{
 
-DoctorScreen::DoctorScreen() : state(nullptr), title(nullptr), specText(nullptr), buttons(nullptr), prescStep(PrescStep::None), activePrescApptId(-1) {}
-
-DoctorScreen::~DoctorScreen() {
-    delete title;
-    delete specText;
-    if (buttons) {
-        for (int i = 0; i < 6; i++) delete* (buttons + i);
-        delete[] buttons;
-    }
 }
 
-int DoctorScreen::parseDateToCompare(const char* dateStr) {
-    if (!dateStr || Validator::myStrLen(dateStr) < 10) return 0;
+int DoctorScreen::parseDateToCompare(const char* dateStr) 
+{
+    if (!dateStr || Validator::myStrLen(dateStr) < 10)
+    {
+        return 0;
+    }
     int d = (*(dateStr + 0) - '0') * 10 + (*(dateStr + 1) - '0');
     int m = (*(dateStr + 3) - '0') * 10 + (*(dateStr + 4) - '0');
     int y = (*(dateStr + 6) - '0') * 1000 + (*(dateStr + 7) - '0') * 100 + (*(dateStr + 8) - '0') * 10 + (*(dateStr + 9) - '0');
     return (y * 10000) + (m * 100) + d;
 }
 
-void DoctorScreen::init(const sf::Font& font, AppState& appState) {
+void DoctorScreen::init(const sf::Font& font, AppState& appState) 
+{
     state = &appState;
 
     title = new sf::Text(font);
-    title->setCharacterSize(35);
-    title->setFillColor(sf::Color::Cyan);
-    title->setPosition({ 50.f, 30.f });
+    title->setCharacterSize(52);
+    title->setFillColor(sf::Color::Black);
 
     specText = new sf::Text(font);
-    specText->setCharacterSize(20);
-    specText->setFillColor(sf::Color::White);
-    specText->setPosition({ 50.f, 80.f });
+    specText->setCharacterSize(26);
+    specText->setFillColor(sf::Color(70, 130, 180));
 
-    const char* labels[] = {
-        "1. View Today's Appointments", "2. Mark Complete", "3. Mark No-Show",
-        "4. Write Prescription", "5. View Patient History", "6. Logout"
+    const char* labels[] = 
+    {
+        "1. View Today's Appointments", 
+        "2. Mark Complete", 
+        "3. Mark No-Show",
+        "4. Write Prescription", 
+        "5. View Patient History", 
+        "6. Logout"
     };
+
+    float btnWidth = 500.f;
+    float btnHeight = 75.f;
+    float gapY = 40.f;
 
     buttons = new Button * [6];
     for (int i = 0; i < 6; i++) {
-        sf::Color idle = (i == 5) ? sf::Color(200, 50, 50) : sf::Color(0, 102, 204);
-        sf::Color hover = (i == 5) ? sf::Color(150, 0, 0) : sf::Color(0, 80, 160);
-        float xPos = (i < 3) ? 50.f : 400.f;
-        float yPos = 140.f + ((i % 3) * 80.f);
-        *(buttons + i) = new Button({ 300.f, 50.f }, { xPos, yPos }, *(labels + i), font, idle, hover);
+        sf::Color idle = (i == 5) ? sf::Color(165, 55, 55) : sf::Color(45, 95, 145);
+        sf::Color hover = (i == 5) ? sf::Color(200, 75, 75) : sf::Color(60, 120, 180);
+
+        float xPos = (i < 3) ? 410.f : 1010.f; // 2 Columns of 3 items
+        float yPos = 380.f + ((i % 3) * (btnHeight + gapY));
+
+        *(buttons + i) = new Button({ btnWidth, btnHeight }, { xPos, yPos }, *(labels + i), font, idle, hover);
     }
 
     dataViewer.init(font, "Doctor Clinical Desk");
@@ -208,7 +214,7 @@ void DoctorScreen::handleEvent(const sf::Event& event, sf::RenderWindow& window,
                 }
             }
 
-            sf::String display = "--- PATIENT CLINCAL DOSSIER ---\n";
+            sf::String display = "--- PATIENT CLINICAL DOSSIER ---\n";
             for (int j = 0; j < count; j++) {
                 display += "Date: " + sf::String((*(myRx + j))->getDate()) + "\n" +
                     "Meds: " + sf::String((*(myRx + j))->getMedicines()) + "\n" +
@@ -294,8 +300,20 @@ void DoctorScreen::update(float dt, sf::RenderWindow& window) {
     if (state && state->loggedInUserId != -1) {
         Doctor* d = state->doctors.findByID(state->loggedInUserId);
         if (d) {
-            if (title) title->setString("Doctor Hub - Welcome, Dr. " + sf::String(d->getName()));
-            if (specText) specText->setString("Department: " + sf::String(d->getSpecialization()));
+            if (title) {
+                title->setString("Doctor Hub - Welcome, Dr. " + sf::String(d->getName()));
+                // Calculate centering coordinates dynamically
+                sf::FloatRect titleBounds = title->getLocalBounds();
+                title->setOrigin({ titleBounds.position.x + titleBounds.size.x / 2.0f, titleBounds.position.y + titleBounds.size.y / 2.0f });
+                title->setPosition({ 1920.f / 2.0f, 150.f });
+            }
+            if (specText) {
+                specText->setString("Department: " + sf::String(d->getSpecialization()));
+                // Calculate centering coordinates dynamically
+                sf::FloatRect specBounds = specText->getLocalBounds();
+                specText->setOrigin({ specBounds.position.x + specBounds.size.x / 2.0f, specBounds.position.y + specBounds.size.y / 2.0f });
+                specText->setPosition({ 1920.f / 2.0f, 240.f });
+            }
         }
     }
 
@@ -306,7 +324,8 @@ void DoctorScreen::update(float dt, sf::RenderWindow& window) {
     else if (prescVerifyForm.isActive()) prescVerifyForm.update(window);
     else if (prescDetailsForm.isActive()) prescDetailsForm.update(window);
     else {
-        if (buttons) {
+        if (buttons) 
+        {
             for (int i = 0; i < 6; i++) (*(buttons + i))->update(window);
         }
     }
@@ -325,4 +344,18 @@ void DoctorScreen::draw(sf::RenderWindow& window) {
     if (prescVerifyForm.isActive()) prescVerifyForm.draw(window);
     if (prescDetailsForm.isActive()) prescDetailsForm.draw(window);
     if (dataViewer.isActive()) dataViewer.draw(window);
+}
+
+DoctorScreen::~DoctorScreen()
+{
+    delete title;
+    delete specText;
+    if (buttons)
+    {
+        for (int i = 0; i < 6; i++)
+        {
+            delete* (buttons + i);
+        }
+        delete[] buttons;
+    }
 }

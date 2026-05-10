@@ -1,18 +1,23 @@
 #pragma once
 #include <SFML/Graphics.hpp>
+#include <fstream>
 #include "AppState.h"
 #include "UIComponents.h"
+#include "utility.h"
+#include "Validator.h"
 
-class AdminScreen {
+using namespace sf;
+
+class AdminScreen
+{
 private:
     AppState* state;
-    sf::Text* title;
-    Button* buttons[10]; // 10 Options exactly as requested
+    Text* title;
+    Button* buttons[10]; // Matches your 10-button requirement
 
     InputForm addDoctorForm;
     InputForm removeDoctorForm;
     InputForm dischargeForm;
-
     DataViewer dataViewer;
 
     int calculateDaysBetween(const char* dateStr);
@@ -20,8 +25,9 @@ private:
 public:
     AdminScreen();
     ~AdminScreen();
-    void init(const sf::Font& font, AppState& appState);
-    void handleEvent(const sf::Event& event, sf::RenderWindow& window, AppState& appState);
-    void update(float dt, sf::RenderWindow& window);
-    void draw(sf::RenderWindow& window);
+
+    void init(const Font& font, AppState& appState);
+    void handleEvent(const Event& event, RenderWindow& window, AppState& appState);
+    void update(float dt, RenderWindow& window);
+    void draw(RenderWindow& window);
 };

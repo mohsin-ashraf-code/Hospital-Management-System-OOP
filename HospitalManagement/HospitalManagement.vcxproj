@@ -35,6 +35,7 @@
     <ClCompile Include="Prescription.cpp" />
     <ClCompile Include="STRING.cpp" />
     <ClCompile Include="UIComponents.cpp" />
+    <ClCompile Include="utility.cpp" />
     <ClCompile Include="Validator.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -60,6 +61,7 @@
     <ClInclude Include="Storage.h" />
     <ClInclude Include="STRING.h" />
     <ClInclude Include="UIComponents.h" />
+    <ClInclude Include="utility.h" />
     <ClInclude Include="Validator.h" />
   </ItemGroup>
   <ItemGroup>

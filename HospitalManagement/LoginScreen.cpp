@@ -18,18 +18,29 @@ void LoginScreen::init(const sf::Font& font, AppState& appState) {
     state = &appState;
 
     title = new sf::Text(font);
-    title->setString("MediCore Hospital Management System");
-    title->setCharacterSize(30);
-    title->setFillColor(sf::Color::Cyan);
-    title->setPosition({ 120.f, 60.f });
+    title->setString("MEDICORE - HOSPITAL MANAGEMENT SYSTEM");
+    title->setCharacterSize(52); // Much larger, authoritative title
+    title->setFillColor(sf::Color::Black); // Turned BLACK for maximum contrast on Alice Blue
+
+    // Center the Title Origin and Position dynamically
+    sf::FloatRect titleBounds = title->getLocalBounds();
+    title->setOrigin({ titleBounds.position.x + titleBounds.size.x / 2.0f, titleBounds.position.y + titleBounds.size.y / 2.0f });
+    title->setPosition({ 1920.f / 2.0f, 180.f }); // Perfectly centered horizontally near the top
 
     buttons = new Button * [4];
     const char* labels[] = { "1. Patient Login", "2. Doctor Login", "3. Admin Login", "4. Exit Application" };
 
+    float btnWidth = 500.f;  // Increased from 300
+    float btnHeight = 75.f;  // Increased from 50
+    float startX = (1920.f - btnWidth) / 2.0f; // Calculate exact center-X of the screen
+    float startY = 380.f;    // Vertical start layout coordinate
+
     for (int i = 0; i < 4; i++) {
-        sf::Color idle = (i == 3) ? sf::Color(150, 0, 0) : sf::Color(0, 102, 204);
-        sf::Color hover = (i == 3) ? sf::Color(200, 0, 0) : sf::Color(0, 120, 240);
-        *(buttons + i) = new Button({ 300.f, 50.f }, { 250.f, 160.f + (i * 75.f) }, *(labels + i), font, idle, hover);
+        // High-end medical color scheme: Deep Slate Blue for options, Velvet Maroon for exit
+        sf::Color idle = (i == 3) ? sf::Color(165, 55, 55) : sf::Color(45, 95, 145);
+        sf::Color hover = (i == 3) ? sf::Color(200, 75, 75) : sf::Color(60, 120, 180);
+
+        *(buttons + i) = new Button({ btnWidth, btnHeight }, { startX, startY + (i * 110.f) }, *(labels + i), font, idle, hover);
     }
 
     const char* fields[] = { "Enter User ID", "Enter Password" };

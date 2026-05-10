@@ -4,32 +4,38 @@
 #include "UIComponents.h"
 #include "STRING.h"
 
-using namespace sf;
+enum class BookingState { None, SearchSpec, SelectDoc, EnterDate, EnterTime };
 
-class PatientScreen 
-{
+class PatientScreen {
 private:
     AppState* state;
-    Text* title;
-    Text* subtitle;
+    sf::Text* title;
+    sf::Text* balanceText;
     Button** buttons;
-    int buttonCount;
+    BookingState bookState;
+    int selectedDocId;
+    STRING selectedDate;
+    int sessionalTopUpAttempts;
 
-    InputForm bookApptForm;
-    InputForm cancelApptForm;
-    InputForm payBillForm;
     InputForm topUpForm;
+    InputForm payBillForm;
+    InputForm cancelApptForm;
+
+    InputForm searchSpecForm;
+    InputForm selectDocForm;
+    InputForm bookDateForm;
+    InputForm bookTimeForm;
+
     DataViewer dataViewer;
 
-    InputForm finalizeApptForm;  
-    STRING currentSearchSpec;
+    bool manualCaseInsensitiveMatch(const char* str1, const char* str2);
+    int parseDateToInt(const char* dateStr);
+
 public:
     PatientScreen();
-
-    void init(const Font& font, AppState& appState);
-    void handleEvent(const Event& event, RenderWindow& window, AppState& appState);
-    void update(float dt, RenderWindow& window);
-    void draw(RenderWindow& window);
-
     ~PatientScreen();
+    void init(const sf::Font& font, AppState& appState);
+    void handleEvent(const sf::Event& event, sf::RenderWindow& window, AppState& appState);
+    void update(float dt, sf::RenderWindow& window);
+    void draw(sf::RenderWindow& window);
 };

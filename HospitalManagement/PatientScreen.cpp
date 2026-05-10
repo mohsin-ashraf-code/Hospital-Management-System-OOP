@@ -1,794 +1,486 @@
 #include "PatientScreen.h"
-#include "utility.h"
 #include "Validator.h"
 #include "FileHandler.h"
-#include "InvalidInputException.h"
-#include "InsufficientFundsException.h"
-#include "SlotUnavailableException.h"
-#include <fstream>
-#include <cstdio>
 
-// --- Sorting Structures (Hidden inside the .cpp for encapsulation) ---
-struct ApptRow 
-{
-    char id[8];
-    char docId[8];
-    char date[12];
-    char slot[16];
-    char status[16];
-};
+extern sf::String intToStr(int num);
+extern sf::String floatToStr(float num);
 
-struct RecordRow 
-{
-    char id[8];
-    char docId[8];
-    char date[12];
-    char diag[64];
-    char meds[64];
-};
+PatientScreen::PatientScreen() : state(nullptr), title(nullptr), balanceText(nullptr), buttons(nullptr), bookState(BookingState::None), selectedDocId(-1), sessionalTopUpAttempts(0) {}
 
-// Constructor
-PatientScreen::PatientScreen() : state(nullptr), title(nullptr), subtitle(nullptr), buttonCount(8) 
-{
-    buttons = new Button * [buttonCount];
-    for (int i = 0; i < buttonCount; i++) 
-    {
-        buttons[i] = nullptr;
+PatientScreen::~PatientScreen() {
+    delete title;
+    delete balanceText;
+    if (buttons) {
+        for (int i = 0; i < 8; i++) delete* (buttons + i);
+        delete[] buttons;
     }
-    currentSearchSpec = STRING("");
 }
 
-// Init
-void PatientScreen::init(const Font& font, AppState& appState) 
-{
+bool PatientScreen::manualCaseInsensitiveMatch(const char* str1, const char* str2) {
+    if (!str1 || !str2) return false;
+    int i = 0;
+    while (*(str1 + i) != '\0' && *(str2 + i) != '\0') {
+        char c1 = *(str1 + i);
+        char c2 = *(str2 + i);
+        if (c1 >= 'A' && c1 <= 'Z') c1 += 32;
+        if (c2 >= 'A' && c2 <= 'Z') c2 += 32;
+        if (c1 != c2) return false;
+        i++;
+    }
+    return (*(str1 + i) == '\0' && *(str2 + i) == '\0');
+}
+
+int PatientScreen::parseDateToInt(const char* dateStr) {
+    if (!dateStr || Validator::myStrLen(dateStr) < 10) return 0;
+    int d = (*(dateStr + 0) - '0') * 10 + (*(dateStr + 1) - '0');
+    int m = (*(dateStr + 3) - '0') * 10 + (*(dateStr + 4) - '0');
+    int y = (*(dateStr + 6) - '0') * 1000 + (*(dateStr + 7) - '0') * 100 + (*(dateStr + 8) - '0') * 10 + (*(dateStr + 9) - '0');
+    return (y * 10000) + (m * 100) + d;
+}
+
+void PatientScreen::init(const sf::Font& font, AppState& appState) {
     state = &appState;
 
-    title = new Text(font);
-    title->setCharacterSize(40);
-    title->setFillColor(Color(0, 51, 102));
-    title->setPosition({ 50.f, 50.f });
+    title = new sf::Text(font);
+    title->setCharacterSize(35);
+    title->setFillColor(sf::Color::Cyan);
+    title->setPosition({ 50.f, 30.f });
 
-    subtitle = new Text(font);
-    subtitle->setCharacterSize(30);
-    subtitle->setFillColor(Color(0, 100, 0));
-    subtitle->setPosition({ 50.f, 100.f });
+    balanceText = new sf::Text(font);
+    balanceText->setCharacterSize(20);
+    balanceText->setFillColor(sf::Color::Green);
+    balanceText->setPosition({ 50.f, 80.f });
 
-    const char* labels[] = 
-    {
-        "1. Book Appointment",
-        "2. Cancel Appointment",
-        "3. View My Appointments",
-        "4. View My Medical Records",
-        "5. View My Bills",
-        "6. Pay Bill",
-        "7. Top Up Balance",
-        "8. Logout"
+    const char* labels[] = {
+        "1. Book Appointment", "2. Cancel Appointment", "3. View My Appointments",
+        "4. View My Medical Records", "5. View My Bills", "6. Pay Bill",
+        "7. Top Up Balance", "8. Logout"
     };
 
-    for (int i = 0; i < buttonCount; i++) 
-    {
-        Color idle = (i == 7) ? Color(200, 50, 50) : Color(0, 120, 215);
-        Color hover = (i == 7) ? Color(150, 0, 0) : Color(0, 80, 160);
-        buttons[i] = new Button({ 400.f, 50.f }, { 50.f, 180.f + (i * 60.f) }, labels[i], font, idle, hover);
+    buttons = new Button * [8];
+    for (int i = 0; i < 8; i++) {
+        sf::Color idle = (i == 7) ? sf::Color(200, 50, 50) : sf::Color(0, 102, 204);
+        sf::Color hover = (i == 7) ? sf::Color(150, 0, 0) : sf::Color(0, 80, 160);
+        float xPos = (i < 4) ? 50.f : 400.f;
+        float yPos = 140.f + ((i % 4) * 80.f);
+        *(buttons + i) = new Button({ 300.f, 50.f }, { xPos, yPos }, *(labels + i), font, idle, hover);
     }
 
-    // Step 1 Form: Search Only
-    const char* specFields[] = { "Enter Specialization to Search" };
-    bookApptForm.init(font, "Step 1: Search Doctors", specFields, 1);
+    dataViewer.init(font, "Patient Dashboard Services");
 
-    // Step 2 Form: Finalize Booking
-    const char* apptFields[] = { "Doctor ID", "Date (DD-MM-YYYY)", "Time Slot (e.g. 10:00AM)" };
-    finalizeApptForm.init(font, "Step 2: Book Appointment", apptFields, 3);
+    const char* tFields[] = { "Enter amount (PKR)" };
+    topUpForm.init(font, "Top Up Account Balance", tFields, 1);
 
-    const char* cancelFields[] = { "Appointment ID" };
-    cancelApptForm.init(font, "Cancel Appointment", cancelFields, 1);
+    const char* pFields[] = { "Enter Bill ID to Pay" };
+    payBillForm.init(font, "Settle Unpaid Invoice", pFields, 1);
 
-    const char* payFields[] = { "Bill ID" };
-    payBillForm.init(font, "Pay Medical Bill", payFields, 1);
+    const char* cFields[] = { "Enter Appointment ID" };
+    cancelApptForm.init(font, "Void Current Booking", cFields, 1);
 
-    const char* topUpFields[] = { "Amount (PKR)" };
-    topUpForm.init(font, "Add Funds to Account", topUpFields, 1);
+    const char* s1[] = { "Enter Specialization" };
+    searchSpecForm.init(font, "Step 1: Department Sorting", s1, 1);
 
-    dataViewer.init(font, "Patient Dashboard");
+    const char* s2[] = { "Enter Doctor ID" };
+    selectDocForm.init(font, "Step 2: Medical Officer ID", s2, 1);
+
+    const char* s3[] = { "Enter Date (DD-MM-YYYY)" };
+    bookDateForm.init(font, "Step 3: Scheduling Calendar", s3, 1);
+
+    const char* s4[] = { "Enter Time (HH:MM)" };
+    bookTimeForm.init(font, "Step 4: Session Slot Selection", s4, 1);
 }
 
-// Handle Event
-void PatientScreen::handleEvent(const Event& event, RenderWindow& window, AppState& appState) 
-{
-    if (dataViewer.isActive()) 
-    {
+void PatientScreen::handleEvent(const sf::Event& event, sf::RenderWindow& window, AppState& appState) {
+    if (dataViewer.isActive()) {
         dataViewer.handleEvent(event, window);
         return;
     }
 
-    // --- 1. BOOK APPOINTMENT ---
-// --- 1. BOOK APPOINTMENT (STEP 1: SEARCH) ---
-    if (bookApptForm.isActive()) {
-        bookApptForm.handleEvent(event, window, [&](const char** formData) {
-            const char* reqSpec = formData[0];
-            currentSearchSpec = STRING(reqSpec); // Save it for Step 2
+    if (topUpForm.isActive()) {
+        topUpForm.handleEvent(event, window, [&](const char** formData) {
+            const char* amtStr = *(formData + 0);
+            if (!Validator::isPositiveFloat(amtStr)) {
+                sessionalTopUpAttempts++;
+                if (sessionalTopUpAttempts >= 3) {
+                    sessionalTopUpAttempts = 0;
+                    dataViewer.show("Error: Excessive failed attempts. Session closed.");
+                }
+                else {
+                    dataViewer.show("Invalid amount. Attempts remaining: " + intToStr(3 - sessionalTopUpAttempts));
+                }
+                return;
+            }
+            float amt = Validator::charToFloat(amtStr);
+            Patient* p = state->patients.findByID(state->loggedInUserId);
+            if (p) {
+                *p += amt;
+                FileHandler::saveAllPatients(state->patients);
+                sessionalTopUpAttempts = 0;
+                dataViewer.show("Top-Up successful. Balance updated: PKR " + floatToStr(p->getBalance()));
+            }
+            });
+        return;
+    }
 
-            char displayBuffer[8192];
-            displayBuffer[0] = '\0';
-            int matchCount = 0;
+    if (payBillForm.isActive()) {
+        payBillForm.handleEvent(event, window, [&](const char** formData) {
+            int bid = Validator::charToInt(*(formData + 0));
+            Bill* b = state->bills.findByID(bid);
+            Patient* p = state->patients.findByID(state->loggedInUserId);
 
-            for (int i = 0; i < state->doctors.getSize(); i++) {
-                Doctor* d = state->doctors.getAt(i);
-                if (d != nullptr) {
-                    // Using your custom case-insensitive function!
-                    if (myCaseInsensitiveEqual(d->getSpecialization(), reqSpec)) {
-                        char temp[256];
-                        char feeStr[32];
-                        char idStr[16];
+            if (!b || b->getPatientId() != p->getId() || !Validator::myStrEqual(b->getStatus(), "unpaid")) {
+                dataViewer.show("Error: Active invoice ID mismatch.");
+                return;
+            }
+            if (p->getBalance() < b->getAmount()) {
+                dataViewer.show("Settle invoice failed: Insufficient balance.");
+                return;
+            }
 
-                        myFloatToStr(d->getFee(), feeStr);
-                        myIntToStr(d->getId(), idStr);
+            *p -= b->getAmount();
+            b->setStatus("paid");
 
-                        myStrCopy(temp, "Doc ID: ");
-                        myStrCopy(temp + myStrLen(temp), idStr);
-                        myStrCopy(temp + myStrLen(temp), " | Name: Dr. ");
-                        myStrCopy(temp + myStrLen(temp), d->getName());
-                        myStrCopy(temp + myStrLen(temp), " | Fee: PKR ");
-                        myStrCopy(temp + myStrLen(temp), feeStr);
-                        myStrCopy(temp + myStrLen(temp), "\n");
+            FileHandler::saveAllPatients(state->patients);
+            FileHandler::saveAllBills(state->bills);
+            dataViewer.show("Payment complete. Available balance: PKR " + floatToStr(p->getBalance()));
+            });
+        return;
+    }
 
-                        myStrCopy(displayBuffer + myStrLen(displayBuffer), temp);
-                        matchCount++;
-                    }
+    if (cancelApptForm.isActive()) {
+        cancelApptForm.handleEvent(event, window, [&](const char** formData) {
+            int aid = Validator::charToInt(*(formData + 0));
+            Appointment* a = state->appointments.findByID(aid);
+            Patient* p = state->patients.findByID(state->loggedInUserId);
+
+            if (!a || a->getPatientId() != p->getId() || !Validator::myStrEqual(a->getStatus(), "pending")) {
+                dataViewer.show("Error: Invalid active appointment ID mapping.");
+                return;
+            }
+
+            a->setStatus("cancelled");
+
+            Doctor* d = state->doctors.findByID(a->getDoctorId());
+            if (d) {
+                *p += d->getFee(); // Refund
+            }
+
+            for (int i = 0; i < state->bills.getSize(); i++) {
+                Bill* b = state->bills.getAt(i);
+                if (b->getAppointmentId() == aid) {
+                    b->setStatus("cancelled");
+                    break;
                 }
             }
 
-            if (matchCount == 0) {
-                // Rubric requirement: Print this exact message and return to menu
+            FileHandler::saveAllPatients(state->patients);
+            FileHandler::saveAllAppointments(state->appointments);
+            FileHandler::saveAllBills(state->bills);
+
+            dataViewer.show("Session voided. Retainer fee of PKR " + floatToStr(d ? d->getFee() : 0) + " refunded.");
+            });
+        return;
+    }
+
+    if (searchSpecForm.isActive()) {
+        searchSpecForm.handleEvent(event, window, [&](const char** formData) {
+            sf::String display = "--- MATCHING SPECIALIST DIRECTORY ---\n";
+            bool found = false;
+            for (int i = 0; i < state->doctors.getSize(); i++) {
+                Doctor* d = state->doctors.getAt(i);
+                if (manualCaseInsensitiveMatch(d->getSpecialization(), *(formData + 0))) {
+                    display += "ID: " + intToStr(d->getId()) + " | Dr. " + sf::String(d->getName()) + " | Fee: " + floatToStr(d->getFee()) + "\n";
+                    found = true;
+                }
+            }
+            if (!found) {
                 dataViewer.show("No doctors available for that specialization.");
             }
             else {
-                // Show the list of doctors, AND trigger Step 2!
-                dataViewer.show(displayBuffer);
-                finalizeApptForm.show();
+                dataViewer.show(display);
+                bookState = BookingState::SelectDoc;
+                selectDocForm.show();
             }
             });
         return;
     }
 
-    // --- 1. BOOK APPOINTMENT (STEP 2: FINALIZE) ---
-    if (finalizeApptForm.isActive()) {
-        finalizeApptForm.handleEvent(event, window, [&](const char** formData) {
-            try {
-                int targetDocId = Validator::charToInt(formData[0]);
-                const char* dateStr = formData[1];
-                const char* slotStr = formData[2];
-
-                if (!Validator::isValidDate(dateStr)) 
-                {
-                    throw InvalidInputException("Error: Invalid Date format! Use DD-MM-YYYY.");
-                }
-                if (!Validator::isValidTimeSlot(slotStr)) 
-                {
-                    throw InvalidInputException("Error: Invalid Time format! Use e.g., 10:00AM.");
-                }
-
-                Patient* p = state->patients.findByID(state->loggedInUserId);
-                Doctor* d = state->doctors.findByID(targetDocId);
-
-                if (p == nullptr || d == nullptr) 
-                {
-                    throw InvalidInputException("Error: Invalid Doctor ID.");
-                }
-
-                // Double check they didn't type an ID for a doctor in a different department
-                if (!myCaseInsensitiveEqual(d->getSpecialization(), currentSearchSpec.getData())) {
-                    throw InvalidInputException("Error: Doctor does not match searched specialization.");
-                }
-
-                if (p->getBalance() < d->getFee()) {
-                    throw InsufficientFundsException("Error: Insufficient account balance!");
-                }
-
-                std::ifstream checkFile("appointments.txt");
-                if (checkFile.is_open()) {
-                    char line[256];
-                    while (checkFile.getline(line, sizeof(line))) {
-                        if (myStrLen(line) < 5) {
-                            continue;
-                        }
-                        char lineCopy[256];
-                        myStrCopy(lineCopy, line);
-
-                        char* cols[10];
-                        int colIdx = 0;
-                        cols[colIdx++] = lineCopy;
-
-                        for (int k = 0; lineCopy[k] != '\0' && colIdx < 10; k++) {
-                            if (lineCopy[k] == ',') {
-                                lineCopy[k] = '\0';
-                                cols[colIdx++] = &lineCopy[k + 1];
-                            }
-                        }
-
-                        if (colIdx >= 6) {
-                            int existDocId = Validator::charToInt(cols[2]);
-                            if (existDocId == targetDocId && myStrEqual(cols[3], dateStr) && myStrEqual(cols[4], slotStr) && cols[5][0] == 'P') {
-                                checkFile.close();
-                                throw SlotUnavailableException("Error: Time slot is already booked for this date!");
-                            }
-                        }
-                    }
-                    checkFile.close();
-                }
-
-                *p -= d->getFee();
-                FileHandler::saveAllPatients(state->patients);
-
-                int newApptId = 1;
-                std::ifstream inFile("appointments.txt");
-                char line[256];
-
-                while (inFile.getline(line, sizeof(line))) {
-                    newApptId++;
-                }
-                inFile.close();
-
-                std::ofstream outFile("appointments.txt", std::ios::app);
-                if (outFile.is_open()) {
-                    outFile << "\n" << newApptId << "," << p->getId() << "," << d->getId() << "," << dateStr << "," << slotStr << ",Pending";
-                    outFile.close();
-                }
-
-                // Close the dataviewer list and show success
-                dataViewer.show("Appointment Booked Successfully!");
+    if (selectDocForm.isActive()) {
+        selectDocForm.handleEvent(event, window, [&](const char** formData) {
+            int did = Validator::charToInt(*(formData + 0));
+            Doctor* d = state->doctors.findByID(did);
+            if (!d) {
+                dataViewer.show("Doctor not found.");
+                bookState = BookingState::None;
             }
-            catch (const HospitalException& e) {
-                dataViewer.show(e.what());
+            else {
+                selectedDocId = did;
+                bookState = BookingState::EnterDate;
+                bookDateForm.show();
             }
             });
         return;
     }
 
-    // --- 2. CANCEL APPOINTMENT ---
-    if (cancelApptForm.isActive()) 
-    {
-        cancelApptForm.handleEvent(event, window, [&](const char** formData) 
-        {
-            int targetAppt = Validator::charToInt(formData[0]);
-            int patId = state->loggedInUserId;
-
-            std::ifstream inFile("appointments.txt");
-            std::ofstream outFile("temp_appts.txt");
-
-            if (inFile.is_open() && outFile.is_open()) 
-            {
-                char line[256];
-                while (inFile.getline(line, sizeof(line))) 
-                {
-                    if (myStrLen(line) < 5) 
-                    {
-                        continue;
-                    }
-                    char lineCopy[256];
-                    myStrCopy(lineCopy, line);
-
-                    char* cols[10];
-                    int colIdx = 0;
-                    cols[colIdx++] = lineCopy;
-
-                    for (int k = 0; lineCopy[k] != '\0' && colIdx < 10; k++) 
-                    {
-                        if (lineCopy[k] == ',') 
-                        {
-                            lineCopy[k] = '\0';
-                            cols[colIdx++] = &lineCopy[k + 1];
-                        }
-                    }
-
-                    if (colIdx >= 2)
-                    {
-                        int aId = Validator::charToInt(cols[0]);
-                        int pId = Validator::charToInt(cols[1]);
-                        if (aId == targetAppt && pId == patId) 
-                        {
-                            continue;
-                        }
-                    }
-                    outFile << line << "\n";
-                }
-                inFile.close();
-                outFile.close();
-
-                (void)remove("appointments.txt");
-                (void)rename("temp_appts.txt", "appointments.txt");
+    if (bookDateForm.isActive()) {
+        bookDateForm.handleEvent(event, window, [&](const char** formData) {
+            const char* dStr = *(formData + 0);
+            if (!Validator::isValidDate(dStr)) {
+                dataViewer.show("Invalid date. Use format DD-MM-YYYY (2026 or later).");
+                bookState = BookingState::None;
             }
-        });
+            else {
+                selectedDate.copy(dStr);
+                const char* slots[] = { "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00" };
+                sf::String display = "--- AVAILABLE SLOTS ON " + sf::String(selectedDate.get()) + " ---\n";
+
+                for (int i = 0; i < 8; i++) {
+                    bool taken = false;
+                    for (int j = 0; j < state->appointments.getSize(); j++) {
+                        Appointment* a = state->appointments.getAt(j);
+                        if (a->getDoctorId() == selectedDocId && Validator::myStrEqual(a->getDate(), selectedDate.get()) &&
+                            Validator::myStrEqual(a->getTimeSlot(), *(slots + i)) && !Validator::myStrEqual(a->getStatus(), "cancelled")) {
+                            taken = true;
+                            break;
+                        }
+                    }
+                    if (!taken) {
+                        display += sf::String(*(slots + i)) + "  ";
+                    }
+                }
+                dataViewer.show(display);
+                bookState = BookingState::EnterTime;
+                bookTimeForm.show();
+            }
+            });
         return;
     }
 
-    // --- 3. PAY BILL ---
-    if (payBillForm.isActive()) 
-    {
-        payBillForm.handleEvent(event, window, [&](const char** formData) 
-        {
-            int targetBill = Validator::charToInt(formData[0]);
+    if (bookTimeForm.isActive()) {
+        bookTimeForm.handleEvent(event, window, [&](const char** formData) {
+            const char* tStr = *(formData + 0);
+            if (!Validator::isValidTimeSlot(tStr)) {
+                dataViewer.show("Format mismatch: invalid block marker.");
+                bookState = BookingState::None;
+                return;
+            }
+
+            for (int j = 0; j < state->appointments.getSize(); j++) {
+                Appointment* a = state->appointments.getAt(j);
+                if (a->getDoctorId() == selectedDocId && Validator::myStrEqual(a->getDate(), selectedDate.get()) &&
+                    Validator::myStrEqual(a->getTimeSlot(), tStr) && !Validator::myStrEqual(a->getStatus(), "cancelled")) {
+                    dataViewer.show("Slot Unavailable! Please select another time.");
+                    bookState = BookingState::None;
+                    return;
+                }
+            }
+
             Patient* p = state->patients.findByID(state->loggedInUserId);
+            Doctor* d = state->doctors.findByID(selectedDocId);
 
-            if (p != nullptr) 
-            {
-                std::ifstream inFile("bills.txt");
-                std::ofstream outFile("temp_bills.txt");
-
-                if (inFile.is_open() && outFile.is_open()) 
-                {
-                    char line[256];
-                    while (inFile.getline(line, sizeof(line))) 
-                    {
-                        if (myStrLen(line) < 5) 
-                        {
-                            continue;
-                        }
-                        char lineCopy[256];
-                        myStrCopy(lineCopy, line);
-
-                        char* cols[10];
-                        int colIdx = 0;
-                        cols[colIdx++] = lineCopy;
-
-                        for (int k = 0; lineCopy[k] != '\0' && colIdx < 10; k++) 
-                        {
-                            if (lineCopy[k] == ',') 
-                            {
-                                lineCopy[k] = '\0';
-                                cols[colIdx++] = &lineCopy[k + 1];
-                            }
-                        }
-
-                        if (colIdx >= 5) 
-                        {
-                            int bId = Validator::charToInt(cols[0]);
-                            int pId = Validator::charToInt(cols[1]);
-                            float amt = myAtof(cols[2]);
-
-                            if (bId == targetBill && pId == p->getId() && cols[4][0] == 'U') 
-                            {
-                                if (p->getBalance() >= amt) 
-                                {
-                                    *p -= amt;
-                                    FileHandler::saveAllPatients(state->patients);
-                                    outFile << cols[0] << "," << cols[1] << "," << cols[2] << "," << cols[3] << ",Paid\n";
-                                    continue;
-                                }
-                            }
-                        }
-                        outFile << line << "\n";
-                    }
-                    inFile.close();
-                    outFile.close();
-
-                    (void)remove("bills.txt");
-                    (void)rename("temp_bills.txt", "bills.txt");
-                }
+            if (p->getBalance() < d->getFee()) {
+                dataViewer.show("Insufficient funds to book this appointment.");
+                bookState = BookingState::None;
+                return;
             }
-        });
+
+            *p -= d->getFee();
+            int newApptId = state->appointments.getSize() > 0 ? state->appointments.getAt(state->appointments.getSize() - 1)->getId() + 1 : 1;
+            int newBillId = state->bills.getSize() > 0 ? state->bills.getAt(state->bills.getSize() - 1)->getId() + 1 : 1;
+
+            Appointment newAppt(newApptId, p->getId(), d->getId(), selectedDate.get(), tStr, "pending");
+            Bill newBill(newBillId, p->getId(), newApptId, d->getFee(), "unpaid", selectedDate.get());
+
+            state->appointments.add(newAppt);
+            state->bills.add(newBill);
+
+            FileHandler::saveAllPatients(state->patients);
+            FileHandler::appendAppointment(newAppt);
+            FileHandler::appendBill(newBill);
+
+            dataViewer.show("Appointment booked successfully! ID: " + intToStr(newApptId));
+            bookState = BookingState::None;
+            });
         return;
     }
 
-    // --- 4. TOP UP ---
-    if (topUpForm.isActive()) 
-    {
-        topUpForm.handleEvent(event, window, [&](const char** formData) 
-        {
-            float amount = myAtof(formData[0]);
-            Patient* p = state->patients.findByID(state->loggedInUserId);
-            if (p != nullptr) 
-            {
-                *p += amount;
-                FileHandler::saveAllPatients(state->patients);
+    for (int i = 0; i < 8; i++) {
+        (*(buttons + i))->handleEvent(event, window, [&, i]() {
+            if (i == 0) {
+                bookState = BookingState::SearchSpec;
+                searchSpecForm.show();
             }
-        });
-        return;
-    }
-
-    // --- BACKGROUND BUTTON CLICKS ---
-    for (int i = 0; i < buttonCount; i++) 
-    {
-        buttons[i]->handleEvent(event, window, [&, i]() 
-        {
-            if (i == 0) 
-            {
-                bookApptForm.show();
-            }
-            else if (i == 1) 
-            {
-                cancelApptForm.show();
-            }
-            else if (i == 2) 
-            {
-                ApptRow rows[100];
-                int rowCount = 0;
-
-                std::ifstream inFile("appointments.txt");
-                if (inFile.is_open()) 
-                {
-                    char line[256];
-                    while (inFile.getline(line, sizeof(line)) && rowCount < 100) 
-                    {
-                        if (myStrLen(line) < 5) 
-                        {
-                            continue;
-                        }
-                        char lineCopy[256];
-                        myStrCopy(lineCopy, line);
-
-                        char* cols[10];
-                        int colIdx = 0;
-                        cols[colIdx++] = lineCopy;
-
-                        for (int k = 0; lineCopy[k] != '\0' && colIdx < 10; k++) 
-                        {
-                            if (lineCopy[k] == ',') 
-                            {
-                                lineCopy[k] = '\0';
-                                cols[colIdx++] = &lineCopy[k + 1];
-                            }
-                        }
-
-                        if (colIdx >= 6 && Validator::charToInt(cols[1]) == state->loggedInUserId) 
-                        {
-                            myStrCopy(rows[rowCount].id, cols[0]);
-                            myStrCopy(rows[rowCount].docId, cols[2]);
-                            myStrCopy(rows[rowCount].date, cols[3]);
-                            myStrCopy(rows[rowCount].slot, cols[4]);
-                            myStrCopy(rows[rowCount].status, cols[5]);
-                            rowCount++;
-                        }
+            else if (i == 1) {
+                sf::String disp = "--- ACTIVE BOOKINGS ---\n";
+                int count = 0;
+                for (int j = 0; j < state->appointments.getSize(); j++) {
+                    Appointment* a = state->appointments.getAt(j);
+                    if (a->getPatientId() == state->loggedInUserId && Validator::myStrEqual(a->getStatus(), "pending")) {
+                        Doctor* d = state->doctors.findByID(a->getDoctorId());
+                        disp += "ID: " + intToStr(a->getId()) + " | Dr. " + sf::String(d ? d->getName() : "Unknown") + " | " + sf::String(a->getDate()) + " @ " + sf::String(a->getTimeSlot()) + "\n";
+                        count++;
                     }
-                    inFile.close();
+                }
+                if (count == 0) dataViewer.show("You have no pending appointments.");
+                else {
+                    dataViewer.show(disp);
+                    cancelApptForm.show();
+                }
+            }
+            else if (i == 2) {
+                int count = 0;
+                Appointment** myAppts = new Appointment * [state->appointments.getSize()];
+                for (int j = 0; j < state->appointments.getSize(); j++) {
+                    if (state->appointments.getAt(j)->getPatientId() == state->loggedInUserId) {
+                        *(myAppts + count) = state->appointments.getAt(j);
+                        count++;
+                    }
                 }
 
-                for (int a = 0; a < rowCount - 1; a++) 
-                {
-                    for (int b = 0; b < rowCount - a - 1; b++) 
-                    {
-                        const char* d1 = rows[b].date;
-                        const char* d2 = rows[b + 1].date;
+                if (count == 0) {
+                    dataViewer.show("No appointments found.");
+                    delete[] myAppts;
+                    return;
+                }
 
-                        int y1 = (d1[6] - '0') * 1000 + (d1[7] - '0') * 100 + (d1[8] - '0') * 10 + (d1[9] - '0');
-                        int y2 = (d2[6] - '0') * 1000 + (d2[7] - '0') * 100 + (d2[8] - '0') * 10 + (d2[9] - '0');
-
-                        int m1 = (d1[3] - '0') * 10 + (d1[4] - '0');
-                        int m2 = (d2[3] - '0') * 10 + (d2[4] - '0');
-
-                        int dd1 = (d1[0] - '0') * 10 + (d1[1] - '0');
-                        int dd2 = (d2[0] - '0') * 10 + (d2[1] - '0');
-
-                        bool swap = false;
-                        if (y1 > y2 || (y1 == y2 && m1 > m2) || (y1 == y2 && m1 == m2 && dd1 > dd2)) 
-                        {
-                            swap = true;
-                        }
-
-                        if (swap) 
-                        {
-                            ApptRow tmp = rows[b];
-                            rows[b] = rows[b + 1];
-                            rows[b + 1] = tmp;
+                for (int j = 0; j < count - 1; j++) {
+                    for (int k = 0; k < count - j - 1; k++) {
+                        if (parseDateToInt((*(myAppts + k))->getDate()) > parseDateToInt((*(myAppts + k + 1))->getDate())) {
+                            Appointment* temp = *(myAppts + k);
+                            *(myAppts + k) = *(myAppts + k + 1);
+                            *(myAppts + k + 1) = temp;
                         }
                     }
                 }
 
-                char displayBuffer[8192];
-                displayBuffer[0] = '\0';
-
-                for (int j = 0; j < rowCount; j++) 
-                {
-                    char temp[256];
-                    myStrCopy(temp, "Appt ID: ");
-                    myStrCopy(temp + myStrLen(temp), rows[j].id);
-                    myStrCopy(temp + myStrLen(temp), " | Dr. ID: ");
-                    myStrCopy(temp + myStrLen(temp), rows[j].docId);
-                    myStrCopy(temp + myStrLen(temp), " | Date: ");
-                    myStrCopy(temp + myStrLen(temp), rows[j].date);
-                    myStrCopy(temp + myStrLen(temp), " | Slot: ");
-                    myStrCopy(temp + myStrLen(temp), rows[j].slot);
-                    myStrCopy(temp + myStrLen(temp), " | Status: ");
-                    myStrCopy(temp + myStrLen(temp), rows[j].status);
-                    myStrCopy(temp + myStrLen(temp), "\n");
-
-                    myStrCopy(displayBuffer + myStrLen(displayBuffer), temp);
+                sf::String display = "--- MY APPOINTMENTS ---\n";
+                for (int j = 0; j < count; j++) {
+                    Doctor* d = state->doctors.findByID((*(myAppts + j))->getDoctorId());
+                    display += "ID: " + intToStr((*(myAppts + j))->getId()) + " | Dr. " + sf::String(d ? d->getName() : "Unknown") +
+                        " | " + sf::String((*(myAppts + j))->getDate()) + " " + sf::String((*(myAppts + j))->getTimeSlot()) + " [" + sf::String((*(myAppts + j))->getStatus()) + "]\n";
                 }
-
-                if (myStrLen(displayBuffer) == 0) 
-                {
-                    myStrCopy(displayBuffer, "No appointments found.");
-                }
-                dataViewer.show(displayBuffer);
+                dataViewer.show(display);
+                delete[] myAppts;
             }
-            else if (i == 3) 
-            {
-                RecordRow rows[100];
-                int rowCount = 0;
-                std::ifstream inFile("prescriptions.txt");
-
-                if (inFile.is_open()) 
-                {
-                    char line[256];
-                    while (inFile.getline(line, sizeof(line)) && rowCount < 100) 
-                    {
-                        if (myStrLen(line) < 5) 
-                        {
-                            continue;
-                        }
-                        char lineCopy[256];
-                        myStrCopy(lineCopy, line);
-
-                        char* cols[10];
-                        int colIdx = 0;
-                        cols[colIdx++] = lineCopy;
-
-                        for (int k = 0; lineCopy[k] != '\0' && colIdx < 10; k++) 
-                        {
-                            if (lineCopy[k] == ',') 
-                            {
-                                lineCopy[k] = '\0';
-                                cols[colIdx++] = &lineCopy[k + 1];
-                            }
-                        }
-
-                        if (colIdx >= 7 && Validator::charToInt(cols[2]) == state->loggedInUserId) 
-                        {
-                            myStrCopy(rows[rowCount].id, cols[0]);
-                            myStrCopy(rows[rowCount].docId, cols[3]);
-                            myStrCopy(rows[rowCount].date, cols[4]);
-                            myStrCopy(rows[rowCount].meds, cols[5]);
-                            myStrCopy(rows[rowCount].diag, cols[6]);
-                            rowCount++;
-                        }
+            else if (i == 3) {
+                int count = 0;
+                Prescription** myPrescs = new Prescription * [state->prescriptions.getSize()];
+                for (int j = 0; j < state->prescriptions.getSize(); j++) {
+                    if (state->prescriptions.getAt(j)->getPatientId() == state->loggedInUserId) {
+                        *(myPrescs + count) = state->prescriptions.getAt(j);
+                        count++;
                     }
-                    inFile.close();
                 }
 
-                for (int a = 0; a < rowCount - 1; a++) 
-                {
-                    for (int b = 0; b < rowCount - a - 1; b++) 
-                    {
-                        const char* d1 = rows[b].date;
-                        const char* d2 = rows[b + 1].date;
+                if (count == 0) {
+                    dataViewer.show("No medical records found.");
+                    delete[] myPrescs;
+                    return;
+                }
 
-                        int y1 = (d1[6] - '0') * 1000 + (d1[7] - '0') * 100 + (d1[8] - '0') * 10 + (d1[9] - '0');
-                        int y2 = (d2[6] - '0') * 1000 + (d2[7] - '0') * 100 + (d2[8] - '0') * 10 + (d2[9] - '0');
-
-                        int m1 = (d1[3] - '0') * 10 + (d1[4] - '0');
-                        int m2 = (d2[3] - '0') * 10 + (d2[4] - '0');
-
-                        int dd1 = (d1[0] - '0') * 10 + (d1[1] - '0');
-                        int dd2 = (d2[0] - '0') * 10 + (d2[1] - '0');
-
-                        bool swap = false;
-                        if (y1 < y2 || (y1 == y2 && m1 < m2) || (y1 == y2 && m1 == m2 && dd1 < dd2)) 
-                        {
-                            swap = true;
-                        }
-
-                        if (swap) 
-                        {
-                            RecordRow tmp = rows[b];
-                            rows[b] = rows[b + 1];
-                            rows[b + 1] = tmp;
+                for (int j = 0; j < count - 1; j++) {
+                    for (int k = 0; k < count - j - 1; k++) {
+                        if (parseDateToInt((*(myPrescs + k))->getDate()) < parseDateToInt((*(myPrescs + k + 1))->getDate())) {
+                            Prescription* temp = *(myPrescs + k);
+                            *(myPrescs + k) = *(myPrescs + k + 1);
+                            *(myPrescs + k + 1) = temp;
                         }
                     }
                 }
 
-                char displayBuffer[8192];
-                displayBuffer[0] = '\0';
-
-                for (int j = 0; j < rowCount; j++) 
-                {
-                    char temp[256];
-                    myStrCopy(temp, "Rec ID: ");
-                    myStrCopy(temp + myStrLen(temp), rows[j].id);
-                    myStrCopy(temp + myStrLen(temp), " | Date: ");
-                    myStrCopy(temp + myStrLen(temp), rows[j].date);
-                    myStrCopy(temp + myStrLen(temp), " | Diag: ");
-                    myStrCopy(temp + myStrLen(temp), rows[j].diag);
-                    myStrCopy(temp + myStrLen(temp), " | Meds: ");
-                    myStrCopy(temp + myStrLen(temp), rows[j].meds);
-                    myStrCopy(temp + myStrLen(temp), "\n");
-
-                    myStrCopy(displayBuffer + myStrLen(displayBuffer), temp);
+                sf::String display = "--- MEDICAL CASE RECORDS ---\n";
+                for (int j = 0; j < count; j++) {
+                    Doctor* d = state->doctors.findByID((*(myPrescs + j))->getDoctorId());
+                    display += "Date: " + sf::String((*(myPrescs + j))->getDate()) + " | Dr. " + sf::String(d ? d->getName() : "Unknown") + "\n" +
+                        "Meds: " + sf::String((*(myPrescs + j))->getMedicines()) + "\n" +
+                        "Notes: " + sf::String((*(myPrescs + j))->getNotes()) + "\n-------------------------\n";
                 }
-
-                if (myStrLen(displayBuffer) == 0) 
-                {
-                    myStrCopy(displayBuffer, "No medical records found.");
-                }
-                dataViewer.show(displayBuffer);
+                dataViewer.show(display);
+                delete[] myPrescs;
             }
-            else if (i == 4) 
-            {
-                char displayBuffer[8192];
-                displayBuffer[0] = '\0';
-                float totalUnpaid = 0.0f;
-
-                std::ifstream inFile("bills.txt");
-                if (inFile.is_open()) {
-                    char line[256];
-                    while (inFile.getline(line, sizeof(line))) 
-                    {
-                        if (myStrLen(line) < 5) 
-                        {
-                            continue;
-                        }
-                        char lineCopy[256];
-                        myStrCopy(lineCopy, line);
-
-                        char* cols[10];
-                        int colIdx = 0;
-                        cols[colIdx++] = lineCopy;
-
-                        for (int k = 0; lineCopy[k] != '\0' && colIdx < 10; k++) 
-                        {
-                            if (lineCopy[k] == ',') 
-                            {
-                                lineCopy[k] = '\0';
-                                cols[colIdx++] = &lineCopy[k + 1];
-                            }
-                        }
-
-                        if (colIdx >= 5 && Validator::charToInt(cols[1]) == state->loggedInUserId) 
-                        {
-                            char temp[256];
-                            myStrCopy(temp, "Bill ID: ");
-                            myStrCopy(temp + myStrLen(temp), cols[0]);
-                            myStrCopy(temp + myStrLen(temp), " | Amount: PKR ");
-                            myStrCopy(temp + myStrLen(temp), cols[2]);
-                            myStrCopy(temp + myStrLen(temp), " | Reason: ");
-                            myStrCopy(temp + myStrLen(temp), cols[3]);
-                            myStrCopy(temp + myStrLen(temp), " | Status: ");
-                            myStrCopy(temp + myStrLen(temp), cols[4]);
-                            myStrCopy(temp + myStrLen(temp), "\n");
-
-                            myStrCopy(displayBuffer + myStrLen(displayBuffer), temp);
-
-                            if (cols[4][0] == 'U') 
-                            {
-                                totalUnpaid += myAtof(cols[2]);
-                            }
-                        }
+            else if (i == 4) {
+                sf::String display = "--- INVOICES RECORD ---\n";
+                float outstanding = 0.0f;
+                int count = 0;
+                for (int j = 0; j < state->bills.getSize(); j++) {
+                    Bill* b = state->bills.getAt(j);
+                    if (b->getPatientId() == state->loggedInUserId) {
+                        display += "Bill ID: " + intToStr(b->getId()) + " | Appt ID: " + intToStr(b->getAppointmentId()) + " | Amt: " + floatToStr(b->getAmount()) + " | [" + sf::String(b->getStatus()) + "] | Date: " + sf::String(b->getDate()) + "\n";
+                        if (Validator::myStrEqual(b->getStatus(), "unpaid")) outstanding += b->getAmount();
+                        count++;
                     }
-                    inFile.close();
                 }
-
-                if (myStrLen(displayBuffer) == 0) 
-                {
-                    myStrCopy(displayBuffer, "No bills found.");
+                if (count == 0) dataViewer.show("No bills found.");
+                else {
+                    display += "\nTOTAL OUTSTANDING UNPAID AMOUNT: PKR " + floatToStr(outstanding);
+                    dataViewer.show(display);
                 }
-                else 
-                {
-                    char unpaidStr[128];
-                    char unpaidVal[32];
-                    myFloatToStr(totalUnpaid, unpaidVal);
-
-                    myStrCopy(unpaidStr, "\n------------------------------\nTotal Outstanding: PKR ");
-                    myStrCopy(unpaidStr + myStrLen(unpaidStr), unpaidVal);
-                    myStrCopy(displayBuffer + myStrLen(displayBuffer), unpaidStr);
-                }
-                dataViewer.show(displayBuffer);
             }
-            else if (i == 5) 
-            {
-                payBillForm.show();
+            else if (i == 5) {
+                sf::String display = "--- UNPAID INVOICES ---\n";
+                bool found = false;
+                for (int j = 0; j < state->bills.getSize(); j++) {
+                    Bill* b = state->bills.getAt(j);
+                    if (b->getPatientId() == state->loggedInUserId && Validator::myStrEqual(b->getStatus(), "unpaid")) {
+                        display += "ID: " + intToStr(b->getId()) + " | Amt: " + floatToStr(b->getAmount()) + "\n";
+                        found = true;
+                    }
+                }
+                if (!found) dataViewer.show("No unpaid bills.");
+                else {
+                    dataViewer.show(display);
+                    payBillForm.show();
+                }
             }
-            else if (i == 6) 
-            {
+            else if (i == 6) {
                 topUpForm.show();
             }
-            else if (i == 7) 
-            {
+            else if (i == 7) {
                 appState.loggedInUserId = -1;
                 appState.currentScreen = ScreenType::Login;
             }
-        });
+            });
     }
 }
 
-// Update
-void PatientScreen::update(float dt, RenderWindow& window) 
-{
-    if (state != nullptr && state->loggedInUserId != -1 && state->currentScreen == ScreenType::Patient) 
-    {
+void PatientScreen::update(float dt, sf::RenderWindow& window) {
+    if (state && state->loggedInUserId != -1) {
         Patient* p = state->patients.findByID(state->loggedInUserId);
-        if (p != nullptr) 
-        {
-            char welcomeMsg[150];
-            myStrCopy(welcomeMsg, "Welcome, ");
-            myStrCopy(welcomeMsg + myStrLen(welcomeMsg), p->getName());
-            title->setString(welcomeMsg);
-
-            char balStr[50];
-            myStrCopy(balStr, "Balance: PKR ");
-            char balNum[32];
-            myFloatToStr(p->getBalance(), balNum);
-            myStrCopy(balStr + myStrLen(balStr), balNum);
-            subtitle->setString(balStr);
+        if (p) {
+            if (title) title->setString("Patient Board - Welcome, " + sf::String(p->getName()));
+            if (balanceText) balanceText->setString("Cleared Account Balance: PKR " + floatToStr(p->getBalance()));
         }
     }
 
-    if (dataViewer.isActive()) 
-    {
-        dataViewer.update(window);
-    }
-    else if (bookApptForm.isActive()) 
-    {
-        bookApptForm.update(window);
-    }
-    else if (finalizeApptForm.isActive()) 
-    {
-        finalizeApptForm.update(window);          // <--- ADD THIS
-    }
-    else if (cancelApptForm.isActive()) 
-    {
-        cancelApptForm.update(window);
-    }
-    else if (payBillForm.isActive()) 
-    {
-        payBillForm.update(window);
-    }
-    else if (topUpForm.isActive()) 
-    {
-        topUpForm.update(window);
-    }
-    else 
-    {
-        for (int i = 0; i < buttonCount; i++) 
-        {
-            buttons[i]->update(window);
+    if (dataViewer.isActive()) dataViewer.update(window);
+    else if (topUpForm.isActive()) topUpForm.update(window);
+    else if (payBillForm.isActive()) payBillForm.update(window);
+    else if (cancelApptForm.isActive()) cancelApptForm.update(window);
+    else if (searchSpecForm.isActive()) searchSpecForm.update(window);
+    else if (selectDocForm.isActive()) selectDocForm.update(window);
+    else if (bookDateForm.isActive()) bookDateForm.update(window);
+    else if (bookTimeForm.isActive()) bookTimeForm.update(window);
+    else {
+        if (buttons) {
+            for (int i = 0; i < 8; i++) (*(buttons + i))->update(window);
         }
     }
 }
 
-// Draw
-void PatientScreen::draw(RenderWindow& window) 
-{
-    window.draw(*title);
-    window.draw(*subtitle);
+void PatientScreen::draw(sf::RenderWindow& window) {
+    if (title) window.draw(*title);
+    if (balanceText) window.draw(*balanceText);
 
-    for (int i = 0; i < buttonCount; i++) 
-    {
-        buttons[i]->draw(window);
+    if (buttons) {
+        for (int i = 0; i < 8; i++) (*(buttons + i))->draw(window);
     }
 
-    if (bookApptForm.isActive()) 
-    {
-        bookApptForm.draw(window);
-    }
-    if (finalizeApptForm.isActive()) 
-    {            // <--- ADD THIS
-        finalizeApptForm.draw(window);            // <--- ADD THIS
-    }
-    if (cancelApptForm.isActive()) 
-    {
-        cancelApptForm.draw(window);
-    }
-    if (payBillForm.isActive()) 
-    {
-        payBillForm.draw(window);
-    }
-    if (topUpForm.isActive()) 
-    {
-        topUpForm.draw(window);
-    }
-    if (dataViewer.isActive()) 
-    {
-        dataViewer.draw(window);
-    }
-}
-
-// Destructor
-PatientScreen::~PatientScreen()
-{
-    delete title;
-    delete subtitle;
-    for (int i = 0; i < buttonCount; i++)
-    {
-        delete buttons[i];
-    }
-    delete[] buttons;
+    if (topUpForm.isActive()) topUpForm.draw(window);
+    if (payBillForm.isActive()) payBillForm.draw(window);
+    if (cancelApptForm.isActive()) cancelApptForm.draw(window);
+    if (searchSpecForm.isActive()) searchSpecForm.draw(window);
+    if (selectDocForm.isActive()) selectDocForm.draw(window);
+    if (bookDateForm.isActive()) bookDateForm.draw(window);
+    if (bookTimeForm.isActive()) bookTimeForm.draw(window);
+    if (dataViewer.isActive()) dataViewer.draw(window);
 }

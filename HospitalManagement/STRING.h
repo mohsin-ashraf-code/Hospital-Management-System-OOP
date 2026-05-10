@@ -9,20 +9,17 @@ private:
     void resize(int newCapacity);
 
 public:
-    // Constructors & Destructor
     STRING();
     STRING(const char* str);
-    STRING(const STRING& other); // Deep Copy Constructor
+    STRING(const STRING& other);
     ~STRING();
 
-    // Assignment Operator
-    STRING& operator=(const STRING& other); // Deep Copy Assignment
+    STRING& operator=(const STRING& other);
 
-    // Core Functionality
     void copy(const char* str);
     void concatenate(const char* str);
+    void concatenate(char c);
 
-    // Getters
     int getLength() const;
     const char* get() const;
     void clear();

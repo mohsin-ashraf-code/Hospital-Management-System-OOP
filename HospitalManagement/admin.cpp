@@ -1,27 +1,10 @@
 #include "Admin.h"
-#include <iostream>
 
-using namespace std;
+Admin::Admin() : Person() {}
 
-//Constructor
-Admin::Admin() : Person() 
-{
-}
+// Admin text file only has ID, Name, Password. We pass "N/A" to the Contact field.
+Admin::Admin(int i, const char* n, const char* p) : Person(i, n, "N/A", p) {}
 
-Admin::Admin(int id, const char* name, const char* password) : Person(id, name, password)
-{
-}
-
-Admin::~Admin() 
-{
-}
-
-void Admin::displayMenu() const 
-{
-    cout << "ADMIN PANEL - MediCore\n";
-}
-
-const char* Admin::getRole() const 
-{
-    return "Admin";
+bool Admin::operator==(int targetId) const {
+    return id == targetId;
 }

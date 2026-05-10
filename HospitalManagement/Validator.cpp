@@ -1,83 +1,45 @@
 #include "Validator.h"
-#include "utility.h"
 
-int Validator::charToInt(const char* str) 
-{
-    if (!str) 
-    {
-        return 0;
-    }
-    int res = 0;
+int Validator::myStrLen(const char* str) {
+    if (!str) return 0;
+    int len = 0;
+    while (*(str + len) != '\0') len++;
+    return len;
+}
+
+bool Validator::myStrEqual(const char* str1, const char* str2) {
+    if (!str1 || !str2) return false;
     int i = 0;
-    while (*(str + i) != '\0') 
-    {
-        if (*(str + i) >= '0' && *(str + i) <= '9') 
-        {
-            res = res * 10 + (*(str + i) - '0');
-        }
+    while (*(str1 + i) != '\0' && *(str2 + i) != '\0') {
+        if (*(str1 + i) != *(str2 + i)) return false;
         i++;
     }
-    return res;
+    return (*(str1 + i) == '\0' && *(str2 + i) == '\0');
 }
 
-float Validator::charToFloat(const char* str) 
-{
-    if (!str) 
-    {
-        return 0.0f;
-    }
-    return myAtof(str);
-}
-
-bool Validator::isValidID(const char* id) {
-    if (!id || myStrLen(id) == 0) return false;
-    for (int i = 0; *(id + i) != '\0'; i++) {
-        if (*(id + i) < '0' || *(id + i) > '9') return false;
-    }
-    return charToInt(id) > 0;
-}
-
-// Enforces exact DD-MM-YYYY format
 bool Validator::isValidDate(const char* date) {
     if (!date || myStrLen(date) != 10) return false;
     if (*(date + 2) != '-' || *(date + 5) != '-') return false;
-
     for (int i = 0; i < 10; i++) {
-        if (i == 2 || i == 5) continue; // Skip the dashes
+        if (i == 2 || i == 5) continue;
         if (*(date + i) < '0' || *(date + i) > '9') return false;
     }
-
     int dd = (*(date + 0) - '0') * 10 + (*(date + 1) - '0');
     int mm = (*(date + 3) - '0') * 10 + (*(date + 4) - '0');
-
-    if (mm < 1 || mm > 12) return false;
-    if (dd < 1 || dd > 31) return false;
+    int yyyy = (*(date + 6) - '0') * 1000 + (*(date + 7) - '0') * 100 + (*(date + 8) - '0') * 10 + (*(date + 9) - '0');
+    if (yyyy < 2026 || mm < 1 || mm > 12 || dd < 1 || dd > 31) return false;
     return true;
 }
 
-// Basic check for time slot (e.g. "10:00AM")
 bool Validator::isValidTimeSlot(const char* slot) {
-    int len = myStrLen(slot);
-    if (len < 6 || len > 7) return false;
-
-    char secondToLast = *(slot + len - 2);
-    char last = *(slot + len - 1);
-
-    // Must end in AM or PM
-    if ((secondToLast != 'A' && secondToLast != 'P') || last != 'M') return false;
-
-    // Must contain a colon
-    bool hasColon = false;
-    for (int i = 0; i < len - 2; i++) {
-        if (*(slot + i) == ':') {
-            hasColon = true;
-            break;
-        }
+    if (!slot) return false;
+    const char* validSlots[8] = { "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00" };
+    for (int i = 0; i < 8; i++) {
+        if (myStrEqual(slot, *(validSlots + i))) return true;
     }
-    return hasColon;
+    return false;
 }
 
-// Enforces exactly 11 numeric digits
 bool Validator::isValidContact(const char* contact) {
     if (!contact || myStrLen(contact) != 11) return false;
     for (int i = 0; i < 11; i++) {
@@ -86,28 +48,53 @@ bool Validator::isValidContact(const char* contact) {
     return true;
 }
 
-bool Validator::isValidPassword(const char* password) {
-    if (!password || myStrLen(password) < 4) return false;
-    return true;
+bool Validator::isValidPassword(const char* pass) {
+    return pass && myStrLen(pass) >= 6;
 }
 
-bool Validator::isPositiveFloat(const char* val) {
-    if (!val || myStrLen(val) == 0) return false;
+bool Validator::isPositiveFloat(const char* str) {
+    if (!str || myStrLen(str) == 0) return false;
     int dots = 0;
-    for (int i = 0; *(val + i) != '\0'; i++) {
-        if (*(val + i) == '.') {
-            dots++;
-            if (dots > 1) return false;
-        }
-        else if (*(val + i) < '0' || *(val + i) > '9') {
-            return false;
-        }
+    int i = 0;
+    while (*(str + i) != '\0') {
+        if (*(str + i) == '.') dots++;
+        else if (*(str + i) < '0' || *(str + i) > '9') return false;
+        i++;
     }
-    return charToFloat(val) >= 0.0f;
+    return (dots <= 1 && charToFloat(str) > 0.0f);
 }
 
-bool Validator::isValidMenuChoice(const char* choice, int min, int max) {
-    if (!isValidID(choice)) return false;
-    int c = charToInt(choice);
-    return (c >= min && c <= max);
+bool Validator::isValidMenuChoice(int choice, int minVal, int maxVal) {
+    return (choice >= minVal && choice <= maxVal);
+}
+
+int Validator::charToInt(const char* str) {
+    if (!str) return 0;
+    int res = 0, i = 0;
+    while (*(str + i) != '\0') {
+        if (*(str + i) >= '0' && *(str + i) <= '9') {
+            res = res * 10 + (*(str + i) - '0');
+        }
+        i++;
+    }
+    return res;
+}
+
+float Validator::charToFloat(const char* str) {
+    if (!str) return 0.0f;
+    float res = 0.0f, fraction = 1.0f;
+    bool decimal = false;
+    int i = 0;
+    while (*(str + i) != '\0') {
+        if (*(str + i) == '.') decimal = true;
+        else if (*(str + i) >= '0' && *(str + i) <= '9') {
+            if (!decimal) res = res * 10.0f + (*(str + i) - '0');
+            else {
+                fraction *= 0.1f;
+                res += (*(str + i) - '0') * fraction;
+            }
+        }
+        i++;
+    }
+    return res;
 }

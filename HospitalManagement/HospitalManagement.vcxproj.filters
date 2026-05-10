@@ -18,19 +18,22 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Person.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="utility.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Doctor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Patient.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="admin.cpp">
+    <ClCompile Include="Person.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Prescription.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UIComponents.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Validator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Admin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Appointment.cpp">
@@ -39,19 +42,16 @@
     <ClCompile Include="Bill.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Prescription.cpp">
+    <ClCompile Include="Doctor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="FileHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Validator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="HospitalException.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="UIComponents.cpp">
+    <ClCompile Include="AdminScreen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="STRING.cpp">
@@ -60,42 +60,48 @@
     <ClCompile Include="LoginScreen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AdminScreen.cpp">
+    <ClCompile Include="PatientScreen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DoctorScreen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PatientScreen.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="FileNotFoundException.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="InsufficientFundsException.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="InvalidInputException.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SlotUnavailableException.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Person.h">
+    <ClInclude Include="AdminScreen.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="utility.h">
+    <ClInclude Include="AppState.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="Doctor.h">
+    <ClInclude Include="LoginScreen.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Patient.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="admin.h">
+    <ClInclude Include="PatientScreen.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Person.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Prescription.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ScreenManager.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Storage.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UIComponents.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Validator.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Admin.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Appointment.h">
@@ -104,76 +110,58 @@
     <ClInclude Include="Bill.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="Prescription.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Storage.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="FileHandler.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Validator.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="HospitalException.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="UIComponents.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="LoginScreen.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PatientScreen.h">
+    <ClInclude Include="Doctor.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="DoctorScreen.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="AdminScreen.h">
+    <ClInclude Include="FileHandler.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="ScreenManager.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="AppState.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="STRING.h">
+    <ClInclude Include="HospitalException.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="FileNotFoundException.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="InsufficientFundsException.h">
+    <ClInclude Include="InvalidInputException.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="InvalidInputException.h">
+    <ClInclude Include="InsufficientFundsException.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="SlotUnavailableException.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="STRING.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="admin.txt" />
-    <Text Include="patients.txt" />
-    <Text Include="doctors.txt" />
-    <Text Include="appointments.txt">
-      <Filter>Source Files</Filter>
-    </Text>
-    <Text Include="prescriptions.txt">
+    <Text Include="patients.txt">
       <Filter>Source Files</Filter>
     </Text>
     <Text Include="security_log.txt">
       <Filter>Source Files</Filter>
     </Text>
-    <Text Include="temp_bills.txt">
+    <Text Include="bills.txt">
       <Filter>Source Files</Filter>
     </Text>
-    <Text Include="discharged.txt">
+    <Text Include="admin.txt">
       <Filter>Source Files</Filter>
     </Text>
+    <Text Include="appointments.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="doctors.txt">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="prescriptions.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="arial.ttf">
+      <Filter>Source Files</Filter>
+    </Font>
   </ItemGroup>
 </Project>

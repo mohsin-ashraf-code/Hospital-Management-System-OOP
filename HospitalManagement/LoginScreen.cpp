@@ -1,240 +1,129 @@
 #include "LoginScreen.h"
 #include "Validator.h"
 #include "FileHandler.h"
-#include "utility.h"
 
-// Constructor
-LoginScreen::LoginScreen() : currentState(LoginState::SelectRole), selectedRole(0), failedAttempts(0), title(nullptr), subtitle(nullptr), errorText(nullptr), btnPatient(nullptr), btnDoctor(nullptr), btnAdmin(nullptr), btnExit(nullptr), idInput(nullptr), passwordInput(nullptr), btnLogin(nullptr), btnBack(nullptr) 
-{
+extern sf::String intToStr(int num);
+
+LoginScreen::LoginScreen() : state(nullptr), title(nullptr), buttons(nullptr), failedAttempts(0), activeRoleChoice(0) {}
+
+LoginScreen::~LoginScreen() {
+    delete title;
+    if (buttons) {
+        for (int i = 0; i < 4; i++) delete* (buttons + i);
+        delete[] buttons;
+    }
 }
 
-// Init
-void LoginScreen::init(const Font& font, AppState& appState) 
-{
-    float centerX = 1920.f / 2.f;
-    float centerY = 1080.f / 2.f;
+void LoginScreen::init(const sf::Font& font, AppState& appState) {
+    state = &appState;
 
-    title = new Text(font);
-    title->setString("Welcome to MediCore Hospital Management System");
-    title->setCharacterSize(40);
-    title->setFillColor(Color(0, 51, 102));
-    FloatRect titleBounds = title->getLocalBounds();
-    title->setPosition({ centerX - titleBounds.size.x / 2.f, 150.f });
+    title = new sf::Text(font);
+    title->setString("MediCore Hospital Management System");
+    title->setCharacterSize(30);
+    title->setFillColor(sf::Color::Cyan);
+    title->setPosition({ 120.f, 60.f });
 
-    subtitle = new Text(font);
-    subtitle->setString("Select your role:");
-    subtitle->setCharacterSize(30);
-    subtitle->setFillColor(Color::Black);
-    FloatRect subBounds = subtitle->getLocalBounds();
-    subtitle->setPosition({ centerX - subBounds.size.x / 2.f, 250.f });
+    buttons = new Button * [4];
+    const char* labels[] = { "1. Patient Login", "2. Doctor Login", "3. Admin Login", "4. Exit Application" };
 
-    errorText = new Text(font);
-    errorText->setString("");
-    errorText->setCharacterSize(24);
-    errorText->setFillColor(Color::Red);
-    errorText->setPosition({ centerX - 200.f, centerY + 250.f });
+    for (int i = 0; i < 4; i++) {
+        sf::Color idle = (i == 3) ? sf::Color(150, 0, 0) : sf::Color(0, 102, 204);
+        sf::Color hover = (i == 3) ? sf::Color(200, 0, 0) : sf::Color(0, 120, 240);
+        *(buttons + i) = new Button({ 300.f, 50.f }, { 250.f, 160.f + (i * 75.f) }, *(labels + i), font, idle, hover);
+    }
 
-    btnPatient = new Button({ 400.f, 60.f }, { centerX - 200.f, 350.f }, "1. Patient", font, Color(0, 120, 215), Color(0, 80, 160));
-    btnDoctor = new Button({ 400.f, 60.f }, { centerX - 200.f, 430.f }, "2. Doctor", font, Color(0, 120, 215), Color(0, 80, 160));
-    btnAdmin = new Button({ 400.f, 60.f }, { centerX - 200.f, 510.f }, "3. Admin", font, Color(0, 120, 215), Color(0, 80, 160));
-    btnExit = new Button({ 400.f, 60.f }, { centerX - 200.f, 590.f }, "4. Exit", font, Color(200, 50, 50), Color(150, 0, 0));
-
-    idInput = new TextBox({ 400.f, 50.f }, { centerX - 200.f, 350.f }, "Enter ID", font, 10, false);
-    passwordInput = new TextBox({ 400.f, 50.f }, { centerX - 200.f, 430.f }, "Enter Password", font, 50, true);
-    btnLogin = new Button({ 190.f, 60.f }, { centerX - 200.f, 510.f }, "Login", font, Color(0, 150, 0), Color(0, 100, 0));
-    btnBack = new Button({ 190.f, 60.f }, { centerX + 10.f, 510.f }, "Back", font, Color(100, 100, 100), Color(50, 50, 50));
+    const char* fields[] = { "Enter User ID", "Enter Password" };
+    loginForm.init(font, "Security Portal Verification", fields, 2);
+    dataViewer.init(font, "Security Monitor");
 }
 
-// Handle Events
-void LoginScreen::handleEvent(const Event& event, RenderWindow& window, AppState& appState) 
-{
-    if (currentState == LoginState::Locked) 
-    {
+void LoginScreen::handleEvent(const sf::Event& event, sf::RenderWindow& window, AppState& appState) {
+    if (dataViewer.isActive()) {
+        dataViewer.handleEvent(event, window);
         return;
     }
 
-    if (currentState == LoginState::SelectRole) 
-    {
-        btnPatient->handleEvent(event, window, [&]() 
-        { 
-                selectedRole = 1; 
-                subtitle->setString("Patient Login"); 
-                currentState = LoginState::EnterCredentials; 
-                errorText->setString(""); 
-        });
+    if (loginForm.isActive()) {
+        loginForm.handleEvent(event, window, [&](const char** formData) {
+            const char* enteredIdStr = *(formData + 0);
+            const char* enteredPass = *(formData + 1);
 
-        btnDoctor->handleEvent(event, window, [&]() 
-        { 
-            selectedRole = 2; 
-            subtitle->setString("Doctor Login"); 
-            currentState = LoginState::EnterCredentials; 
-            errorText->setString(""); 
-        });
-
-        btnAdmin->handleEvent(event, window, [&]() 
-        { 
-            selectedRole = 3; 
-            subtitle->setString("Admin Login"); 
-            currentState = LoginState::EnterCredentials; 
-            errorText->setString(""); 
-        });
-
-        btnExit->handleEvent(event, window, [&]() 
-        { 
-            window.close(); 
-        });
-    }
-    else if (currentState == LoginState::EnterCredentials) 
-    {
-        idInput->handleEvent(event, window);
-        passwordInput->handleEvent(event, window);
-
-        btnBack->handleEvent(event, window, [&]() 
-        {
-            currentState = LoginState::SelectRole;
-            subtitle->setString("Select your role:");
-            errorText->setString("");
-            idInput->clear();
-            passwordInput->clear();
-        });
-
-        btnLogin->handleEvent(event, window, [&]() 
-        {
-            int enteredId = Validator::charToInt(idInput->getText());
-            const char* enteredPass = passwordInput->getText();
-            bool success = false;
-            const char* roleName = "";
-
-            if (selectedRole == 3) 
-            {
-                roleName = "Admin";
-                if (appState.admin != nullptr && appState.admin->getId() == enteredId && myStrEqual(appState.admin->getPassword(), enteredPass)) 
-                {
-                    success = true;
-                }
-            }
-            else if (selectedRole == 2) 
-            {
-                roleName = "Doctor";
-                Doctor* d = appState.doctors.findByID(enteredId);
-                if (d != nullptr && myStrEqual(d->getPassword(), enteredPass)) 
-                {
-                    success = true;
-                }
-            }
-            else if (selectedRole == 1) 
-            {
-                roleName = "Patient";
-                Patient* p = appState.patients.findByID(enteredId);
-                if (p != nullptr && myStrEqual(p->getPassword(), enteredPass)) 
-                {
-                    success = true;
-                }
+            if (failedAttempts >= 3) {
+                dataViewer.show("Account locked. Contact admin.");
+                return;
             }
 
-            if (success) 
-            {
-                appState.loggedInUserId = enteredId;
-                appState.loggedInRole = STRING(roleName);
-                FileHandler::appendSecurityLog(roleName, idInput->getText(), "SUCCESS");
+            int id = Validator::charToInt(enteredIdStr);
 
-                if (selectedRole == 1) 
-                {
+            if (activeRoleChoice == 1) { // Patient
+                Patient* p = state->patients.findByID(id);
+                if (p && Validator::myStrEqual(p->getPassword(), enteredPass)) {
+                    failedAttempts = 0;
+                    FileHandler::appendSecurityLog("Patient", enteredIdStr, "SUCCESS");
+                    appState.loggedInUserId = id;
                     appState.currentScreen = ScreenType::Patient;
                 }
-                if (selectedRole == 2) 
-                {
+                else {
+                    failedAttempts++;
+                    FileHandler::appendSecurityLog("Patient", enteredIdStr, "FAILED");
+                    dataViewer.show("Invalid Credentials. Attempts remaining: " + intToStr(3 - failedAttempts));
+                }
+            }
+            else if (activeRoleChoice == 2) { // Doctor
+                Doctor* d = state->doctors.findByID(id);
+                if (d && Validator::myStrEqual(d->getPassword(), enteredPass)) {
+                    failedAttempts = 0;
+                    FileHandler::appendSecurityLog("Doctor", enteredIdStr, "SUCCESS");
+                    appState.loggedInUserId = id;
                     appState.currentScreen = ScreenType::Doctor;
                 }
-                if (selectedRole == 3) 
-                {
+                else {
+                    failedAttempts++;
+                    FileHandler::appendSecurityLog("Doctor", enteredIdStr, "FAILED");
+                    dataViewer.show("Invalid Credentials. Attempts remaining: " + intToStr(3 - failedAttempts));
+                }
+            }
+            else if (activeRoleChoice == 3) { // Admin
+                if (state->admin && state->admin->getId() == id && Validator::myStrEqual(state->admin->getPassword(), enteredPass)) {
+                    failedAttempts = 0;
+                    FileHandler::appendSecurityLog("Admin", enteredIdStr, "SUCCESS");
+                    appState.loggedInUserId = id;
                     appState.currentScreen = ScreenType::Admin;
                 }
-
-                errorText->setString("");
-                failedAttempts = 0;
-            }
-            else 
-            {
-                failedAttempts++;
-                if (failedAttempts >= 3) 
-                {
-                    currentState = LoginState::Locked;
-                    errorText->setString("Account locked. Contact admin.");
-                    FileHandler::appendSecurityLog(roleName, idInput->getText(), "LOCKED OUT - 3 Fails");
-                }
-                else 
-                {
-                    char* errorMsg = new char[100];
-                    myStrCopy(errorMsg, "Invalid ID or Password! Attempts left: ");
-                    char* numStr = new char[16];
-                    myIntToStr(3 - failedAttempts, numStr);
-                    myStrCopy(errorMsg + myStrLen(errorMsg), numStr);
-                    errorText->setString(errorMsg);
-                    FileHandler::appendSecurityLog(roleName, idInput->getText(), "FAILED");
-                    delete[] numStr;
-                    delete[] errorMsg;
+                else {
+                    failedAttempts++;
+                    FileHandler::appendSecurityLog("Admin", enteredIdStr, "FAILED");
+                    dataViewer.show("Invalid Credentials. Attempts remaining: " + intToStr(3 - failedAttempts));
                 }
             }
-        });
+            });
+        return;
+    }
+
+    for (int i = 0; i < 4; i++) {
+        (*(buttons + i))->handleEvent(event, window, [&, i]() {
+            if (i == 3) window.close();
+            else {
+                activeRoleChoice = i + 1;
+                loginForm.show();
+            }
+            });
     }
 }
 
-// Update
-void LoginScreen::update(float dt, RenderWindow& window) 
-{
-    if (currentState == LoginState::SelectRole) 
-    {
-        btnPatient->update(window);
-        btnDoctor->update(window);
-        btnAdmin->update(window);
-        btnExit->update(window);
-    }
-    else if (currentState == LoginState::EnterCredentials) 
-    {
-        idInput->update(window);
-        passwordInput->update(window);
-        btnLogin->update(window);
-        btnBack->update(window);
+void LoginScreen::update(float dt, sf::RenderWindow& window) {
+    if (dataViewer.isActive()) dataViewer.update(window);
+    else if (loginForm.isActive()) loginForm.update(window);
+    else if (buttons) {
+        for (int i = 0; i < 4; i++) (*(buttons + i))->update(window);
     }
 }
 
-// Draw
-void LoginScreen::draw(RenderWindow& window) 
-{
-    window.draw(*title);
-    window.draw(*subtitle);
-
-    if (currentState == LoginState::SelectRole) 
-    {
-        btnPatient->draw(window);
-        btnDoctor->draw(window);
-        btnAdmin->draw(window);
-        btnExit->draw(window);
+void LoginScreen::draw(sf::RenderWindow& window) {
+    if (title) window.draw(*title);
+    if (buttons) {
+        for (int i = 0; i < 4; i++) (*(buttons + i))->draw(window);
     }
-
-    else if (currentState == LoginState::EnterCredentials) 
-    {
-        idInput->draw(window);
-        passwordInput->draw(window);
-        btnLogin->draw(window);
-        btnBack->draw(window);
-    }
-    window.draw(*errorText);
-}
-
-// Destructor
-LoginScreen::~LoginScreen()
-{
-    delete title;
-    delete subtitle;
-    delete errorText;
-    delete btnPatient;
-    delete btnDoctor;
-    delete btnAdmin;
-    delete btnExit;
-    delete idInput;
-    delete passwordInput;
-    delete btnLogin;
-    delete btnBack;
+    if (loginForm.isActive()) loginForm.draw(window);
+    if (dataViewer.isActive()) dataViewer.draw(window);
 }

@@ -1,95 +1,20 @@
 #include "Appointment.h"
-#include "utility.h"
 
-using namespace std;
+Appointment::Appointment() : id(0), patientId(0), doctorId(0), date(""), timeSlot(""), status("pending") {}
 
-// --- Default Constructor ---
-Appointment::Appointment() {
-    id = 0;
-    patientId = 0;
-    doctorId = 0;
-    date = STRING("");
-    timeSlot = STRING("");
-    status = STRING("");
+Appointment::Appointment(int i, int pId, int dId, const char* dt, const char* ts, const char* st)
+    : id(i), patientId(pId), doctorId(dId), date(dt), timeSlot(ts), status(st) {
 }
 
-// --- Parameterized Constructor ---
-Appointment::Appointment(int id, int patientId, int doctorId, const char* date, const char* timeSlot, const char* status) {
-    this->id = id;
-    this->patientId = patientId;
-    this->doctorId = doctorId;
-    this->date = STRING(date);
-    this->timeSlot = STRING(timeSlot);
-    this->status = STRING(status);
-}
-
-// --- Copy Constructor ---
-Appointment::Appointment(const Appointment& other) {
-    id = other.id;
-    patientId = other.patientId;
-    doctorId = other.doctorId;
-    date = other.date;
-    timeSlot = other.timeSlot;
-    status = other.status;
-}
-
-// --- Assignment Operator ---
-Appointment& Appointment::operator=(const Appointment& other) 
-{
-    if (this != &other) 
-    {
-        id = other.id;
-        patientId = other.patientId;
-        doctorId = other.doctorId;
-        date = other.date;
-        timeSlot = other.timeSlot;
-        status = other.status;
-    }
-    return *this;
-}
-Appointment::~Appointment() {}
-
-// --- Getters ---
 int Appointment::getId() const { return id; }
 int Appointment::getPatientId() const { return patientId; }
 int Appointment::getDoctorId() const { return doctorId; }
-const char* Appointment::getDate() const { return date.getData(); }
-const char* Appointment::getTimeSlot() const { return timeSlot.getData(); }
-const char* Appointment::getStatus() const { return status.getData(); }
+const char* Appointment::getDate() const { return date.get(); }
+const char* Appointment::getTimeSlot() const { return timeSlot.get(); }
+const char* Appointment::getStatus() const { return status.get(); }
 
-// --- Setters ---
-void Appointment::setStatus(const char* newStatus) {
-    if (newStatus != nullptr) {
-        status = STRING(newStatus);
-    }
-}
+void Appointment::setStatus(const char* st) { status.copy(st); }
 
-// --- Required Operator Overloads ---
-
-// 1. == to check for scheduling conflicts[cite: 1]
-bool Appointment::operator==(const Appointment& other) const {
-    // Conflict exists if it's the same doctor, date, and time slot...
-    bool sameDoctor = (this->doctorId == other.doctorId);
-    bool sameDate = myStrEqual(this->date.getData(), other.date.getData());
-    bool sameTime = myStrEqual(this->timeSlot.getData(), other.timeSlot.getData());
-
-    // ...AND neither appointment is cancelled.
-    bool thisNotCancelled = !myStrEqual(this->status.getData(), "cancelled");
-    bool otherNotCancelled = !myStrEqual(other.status.getData(), "cancelled");
-
-    return (sameDoctor && sameDate && sameTime && thisNotCancelled && otherNotCancelled);
-}
-
-bool Appointment::operator==(int searchId) const 
-{
-    return this->id == searchId;
-}
-
-
-
-// 2. << for formatted console output[cite: 1]
-ostream& operator<<(ostream& os, const Appointment& a) 
-{
-    os << "Appt ID: " << a.id << " | Patient ID: " << a.patientId << " | Doctor ID: " << a.doctorId << " | Date: " << a.date.getData() << " | Time: " << a.timeSlot.getData() << " | Status: " << a.status.getData();
-    return os;
+bool Appointment::operator==(int targetId) const {
+    return id == targetId;
 }

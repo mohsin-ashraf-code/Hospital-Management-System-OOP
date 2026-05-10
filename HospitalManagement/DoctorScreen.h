@@ -2,30 +2,34 @@
 #include <SFML/Graphics.hpp>
 #include "AppState.h"
 #include "UIComponents.h"
+#include "STRING.h"
 
-using namespace sf;
+enum class PrescStep { None, Step1Verify, Step2Form };
 
-class DoctorScreen 
-{
+class DoctorScreen {
 private:
     AppState* state;
-    Text* title;
-    Text* subtitle;
+    sf::Text* title;
+    sf::Text* specText;
     Button** buttons;
-    int buttonCount;
 
-    InputForm markCompleteForm;
-    InputForm markNoShowForm;
-    InputForm writePrescriptionForm;
-    InputForm viewHistoryForm;
     DataViewer dataViewer;
+    InputForm completeForm;
+    InputForm noShowForm;
+    InputForm historyForm;
+
+    PrescStep prescStep;
+    int activePrescApptId;
+    InputForm prescVerifyForm;
+    InputForm prescDetailsForm;
+
+    int parseDateToCompare(const char* dateStr);
 
 public:
     DoctorScreen();
     ~DoctorScreen();
-
-    void init(const Font& font, AppState& appState);
-    void handleEvent(const Event& event, RenderWindow& window, AppState& appState);
-    void update(float dt, RenderWindow& window);
-    void draw(RenderWindow& window);
+    void init(const sf::Font& font, AppState& appState);
+    void handleEvent(const sf::Event& event, sf::RenderWindow& window, AppState& appState);
+    void update(float dt, sf::RenderWindow& window);
+    void draw(sf::RenderWindow& window);
 };

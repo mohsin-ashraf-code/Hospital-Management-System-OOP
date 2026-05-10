@@ -1,8 +1,7 @@
 #pragma once
 #include "HospitalException.h"
 
-class FileNotFoundException : public HospitalException 
-{
+class FileNotFoundException : public HospitalException {
 public:
-    FileNotFoundException(const char* msg);
+    FileNotFoundException(const char* msg) : HospitalException(msg) {}
 };

@@ -3,26 +3,25 @@
 #include "AppState.h"
 #include "UIComponents.h"
 
-using namespace sf;
-
 class AdminScreen {
 private:
     AppState* state;
-    Text* title;
-    Button** buttons;
-    int buttonCount;
+    sf::Text* title;
+    Button* buttons[10]; // 10 Options exactly as requested
 
     InputForm addDoctorForm;
     InputForm removeDoctorForm;
-    InputForm dischargePatientForm;
+    InputForm dischargeForm;
+
     DataViewer dataViewer;
+
+    int calculateDaysBetween(const char* dateStr);
 
 public:
     AdminScreen();
     ~AdminScreen();
-
-    void init(const Font& font, AppState& appState);
-    void handleEvent(const Event& event, RenderWindow& window, AppState& appState);
-    void update(float dt, RenderWindow& window);
-    void draw(RenderWindow& window);
+    void init(const sf::Font& font, AppState& appState);
+    void handleEvent(const sf::Event& event, sf::RenderWindow& window, AppState& appState);
+    void update(float dt, sf::RenderWindow& window);
+    void draw(sf::RenderWindow& window);
 };

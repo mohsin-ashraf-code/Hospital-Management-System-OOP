@@ -1,9 +1,7 @@
 #pragma once
-#include <iostream>
 #include "STRING.h"
 
-class Appointment 
-{
+class Appointment {
 private:
     int id;
     int patientId;
@@ -13,28 +11,16 @@ private:
     STRING status;
 
 public:
-    // Constructors & Destructor
     Appointment();
-    Appointment(int id, int patientId, int doctorId, const char* date, const char* timeSlot, const char* status);
-    ~Appointment();
+    Appointment(int i, int pId, int dId, const char* dt, const char* ts, const char* st);
 
-    // Rule of Three (Required for safe Storage<T> usage)
-    Appointment(const Appointment& other);
-    Appointment& operator=(const Appointment& other);
-
-    // Getters
     int getId() const;
     int getPatientId() const;
     int getDoctorId() const;
     const char* getDate() const;
     const char* getTimeSlot() const;
     const char* getStatus() const;
+    void setStatus(const char* st);
 
-    // Setter for status (Needed when admin/doctor cancels or completes it)
-    void setStatus(const char* newStatus);
-
-    // Required Operator Overloads[cite: 1]
-    bool operator==(const Appointment& other) const;
-    bool operator==(int searchId) const;
-    friend std::ostream& operator<<(std::ostream& os, const Appointment& a);
+    bool operator==(int targetId) const;
 };

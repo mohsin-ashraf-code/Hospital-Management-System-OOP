@@ -1,22 +1,20 @@
 #pragma once
 #include "STRING.h"
 
-class Person 
-{
+class Person {
 protected:
     int id;
     STRING name;
+    STRING contact;
     STRING password;
 
 public:
     Person();
-    Person(int pId, const char* pName, const char* pPass);
+    Person(int i, const char* n, const char* c, const char* p);
     virtual ~Person();
 
-    int getID() const;
+    int getId() const;
     const char* getName() const;
+    const char* getContact() const;
     const char* getPassword() const;
-
-    virtual const char* getRole() const = 0;
-    virtual void displayDetails() const = 0;
 };

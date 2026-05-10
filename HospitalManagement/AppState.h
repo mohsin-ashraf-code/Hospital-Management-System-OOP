@@ -8,7 +8,6 @@
 #include "Bill.h"
 #include "Prescription.h"
 #include "ScreenManager.h"
-#include "STRING.h"
 
 struct AppState {
     // 1. Data Storage (Loaded once in main.cpp)
@@ -22,5 +21,5 @@ struct AppState {
     // 2. Session Variables (Who is currently using the app?)
     ScreenType currentScreen = ScreenType::Login; // Always start at the Login screen
     int loggedInUserId = -1;                      // -1 means nobody is logged in yet
-    STRING loggedInRole;
+    char loggedInRole[20] = "";                   // Will hold "Patient", "Doctor", or "Admin"
 };

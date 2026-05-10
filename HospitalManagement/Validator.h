@@ -2,16 +2,17 @@
 
 class Validator {
 public:
-    // Core Conversions
+    // Manual String Utilities (No <cstring> allowed)
+    static int myStrLen(const char* str);
+    static bool myStrEqual(const char* str1, const char* str2);
+
+    static bool isValidDate(const char* date);
+    static bool isValidTimeSlot(const char* slot);
+    static bool isValidContact(const char* contact);
+    static bool isValidPassword(const char* pass);
+    static bool isPositiveFloat(const char* str);
+    static bool isValidMenuChoice(int choice, int minVal, int maxVal);
+
     static int charToInt(const char* str);
     static float charToFloat(const char* str);
-
-    // Rubric-Mandated Validations
-    static bool isValidID(const char* id);
-    static bool isValidDate(const char* date);           // Enforces DD-MM-YYYY
-    static bool isValidTimeSlot(const char* slot);       // Enforces time formats (e.g., 10:00AM)
-    static bool isValidContact(const char* contact);     // Enforces exactly 11 digits
-    static bool isValidPassword(const char* password);   // Enforces minimum length
-    static bool isPositiveFloat(const char* val);        // Validates floats/balances
-    static bool isValidMenuChoice(const char* choice, int min, int max);
 };

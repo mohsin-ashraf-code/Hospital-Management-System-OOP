@@ -1,11 +1,10 @@
 #pragma once
-class HospitalException 
-{
+#include <exception>
+
+class HospitalException : public std::exception {
 protected:
     char message[200];
-
 public:
     HospitalException(const char* msg);
-    virtual ~HospitalException();
-    virtual const char* what() const;
+    virtual const char* what() const noexcept override;
 };

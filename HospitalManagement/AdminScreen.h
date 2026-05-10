@@ -13,7 +13,7 @@ class AdminScreen
 private:
     AppState* state;
     Text* title;
-    Button* buttons[10]; // Matches your 10-button requirement
+    Button* buttons[10];
 
     InputForm addDoctorForm;
     InputForm removeDoctorForm;

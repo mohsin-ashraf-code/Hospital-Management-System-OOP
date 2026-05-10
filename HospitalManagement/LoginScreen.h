@@ -2,12 +2,13 @@
 #include <SFML/Graphics.hpp>
 #include "AppState.h"
 #include "UIComponents.h"
+using namespace sf;
 
 class LoginScreen 
 {
 private:
     AppState* state;
-    sf::Text* title;
+    Text* title;
     Button** buttons;
     InputForm loginForm;
     DataViewer dataViewer;
@@ -17,8 +18,8 @@ private:
 public:
     LoginScreen();
     ~LoginScreen();
-    void init(const sf::Font& font, AppState& appState);
-    void handleEvent(const sf::Event& event, sf::RenderWindow& window, AppState& appState);
-    void update(float dt, sf::RenderWindow& window);
-    void draw(sf::RenderWindow& window);
+    void init(const Font& font, AppState& appState);
+    void handleEvent(const Event& event, RenderWindow& window, AppState& appState);
+    void update(float dt, RenderWindow& window);
+    void draw(RenderWindow& window);
 };

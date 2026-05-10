@@ -1,7 +1,8 @@
 #pragma once
 #include "STRING.h"
 
-class Appointment {
+class Appointment 
+{
 private:
     int id;
     int patientId;

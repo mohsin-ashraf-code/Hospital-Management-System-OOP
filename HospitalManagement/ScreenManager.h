@@ -1,6 +1,7 @@
 #pragma once
 
-enum class ScreenType {
+enum class ScreenType 
+{
     Login,
     Patient,
     Doctor,

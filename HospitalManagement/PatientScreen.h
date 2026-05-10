@@ -3,14 +3,16 @@
 #include "AppState.h"
 #include "UIComponents.h"
 #include "STRING.h"
+using namespace sf;
 
 enum class BookingState { None, SearchSpec, SelectDoc, EnterDate, EnterTime };
 
-class PatientScreen {
+class PatientScreen 
+{
 private:
     AppState* state;
-    sf::Text* title;
-    sf::Text* balanceText;
+    Text* title;
+    Text* balanceText;
     Button** buttons;
     BookingState bookState;
     int selectedDocId;
@@ -33,9 +35,11 @@ private:
 
 public:
     PatientScreen();
+   
+    void init(const Font& font, AppState& appState);
+    void handleEvent(const Event& event, RenderWindow& window, AppState& appState);
+    void update(float dt, RenderWindow& window);
+    void draw(RenderWindow& window);
+
     ~PatientScreen();
-    void init(const sf::Font& font, AppState& appState);
-    void handleEvent(const sf::Event& event, sf::RenderWindow& window, AppState& appState);
-    void update(float dt, sf::RenderWindow& window);
-    void draw(sf::RenderWindow& window);
 };

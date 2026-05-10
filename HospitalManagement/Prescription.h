@@ -1,15 +1,16 @@
 #pragma once
 #include "STRING.h"
 
-class Prescription {
+class Prescription 
+{
 private:
     int id;
     int appointmentId;
     int patientId;
     int doctorId;
     STRING date;
-    char medicines[500]; // Rubric explicit allowance
-    char notes[300];     // Rubric explicit allowance
+    char medicines[500]; //THE PDF demanded static array
+    char notes[300];     //THE PDF demanded static array
 
 public:
     Prescription();

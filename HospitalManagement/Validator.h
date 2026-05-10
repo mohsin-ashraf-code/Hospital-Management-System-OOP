@@ -1,8 +1,8 @@
 #pragma once
 
-class Validator {
+class Validator 
+{
 public:
-    // Manual String Utilities (No <cstring> allowed)
     static int myStrLen(const char* str);
     static bool myStrEqual(const char* str1, const char* str2);
 

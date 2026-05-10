@@ -1,7 +1,8 @@
 #pragma once
 #include "Person.h"
 
-class Patient : public Person {
+class Patient : public Person 
+{
 private:
     int age;
     char gender;

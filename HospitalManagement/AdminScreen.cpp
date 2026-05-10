@@ -41,9 +41,12 @@ void AdminScreen::init(const Font& font, AppState& appState)
 
     title = new Text(font);
     title->setString("Admin Panel - MediCore");
-    title->setCharacterSize(35);
-    title->setFillColor(Color::Cyan);
-    title->setPosition({ 50.f, 30.f });
+    title->setCharacterSize(50);
+    title->setFillColor(Color::Black);
+
+    FloatRect titleBounds = title->getLocalBounds();
+    title->setOrigin({ titleBounds.position.x + titleBounds.size.x / 2.0f, titleBounds.position.y + titleBounds.size.y / 2.0f });
+    title->setPosition({ 1920.f / 2.0f, 60.f });
 
     const char* labels[] =
     {
@@ -64,10 +67,12 @@ void AdminScreen::init(const Font& font, AppState& appState)
         Color idle = (i == 9) ? Color(200, 50, 50) : Color(0, 102, 204);
         Color hover = (i == 9) ? Color(150, 0, 0) : Color(0, 120, 240);
 
-        float xPos = (i < 5) ? 50.f : 400.f;
-        float yPos = 120.f + ((i % 5) * 80.f);
+        float btnWidth = 380.f;
+        float btnHeight = 65.f;
+        float xPos = (i < 5) ? 100.f : 520.f;
+        float yPos = 150.f + ((i % 5) * 90.f);
 
-        *(buttons + i) = new Button({ 300.f, 50.f }, { xPos, yPos }, *(labels + i), font, idle, hover);
+        *(buttons + i) = new Button({ btnWidth, btnHeight }, { xPos, yPos }, *(labels + i), font, idle, hover);
     }
 
     const char* docFields[] = { "Name", "Specialization", "Contact (11 Digits)", "Password", "Fee (PKR)" };

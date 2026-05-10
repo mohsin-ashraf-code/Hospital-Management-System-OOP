@@ -12,3 +12,13 @@ bool Admin::operator==(int targetId) const
 {
     return id == targetId;
 }
+
+void Admin::display() const
+{
+    
+}
+
+const char* Admin::getRole() const
+{
+    return "Admin";
+}

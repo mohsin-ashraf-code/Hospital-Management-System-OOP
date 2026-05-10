@@ -45,5 +45,5 @@ void Appointment::setStatus(const char* st)
 
 bool Appointment::operator==(int targetId) const 
 {
-    return id == targetId;
+    return (id == targetId);
 }

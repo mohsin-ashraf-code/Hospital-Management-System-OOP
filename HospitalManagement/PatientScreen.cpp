@@ -2,6 +2,9 @@
 #include "Validator.h"
 #include "FileHandler.h"
 #include "utility.h"
+#include "SlotUnavailableException.h"
+#include "InsufficientFundsException.h"
+#include "InvalidInputException.h"
 
 using namespace sf;
 
@@ -63,13 +66,13 @@ void PatientScreen::init(const Font& font, AppState& appState)
 
     const char* labels[] =
     {
-        "1. Book Appointment", 
-        "2. Cancel Appointment", 
+        "1. Book Appointment",
+        "2. Cancel Appointment",
         "3. View My Appointments",
-        "4. View My Medical Records", 
-        "5. View My Bills", 
+        "4. View My Medical Records",
+        "5. View My Bills",
         "6. Pay Bill",
-        "7. Top Up Balance", 
+        "7. Top Up Balance",
         "8. Logout"
     };
 
@@ -126,28 +129,31 @@ void PatientScreen::handleEvent(const Event& event, RenderWindow& window, AppSta
         topUpForm.handleEvent(event, window, [&](const char** formData)
             {
                 const char* amtStr = *(formData + 0);
-                if (!Validator::isPositiveFloat(amtStr))
+                try
                 {
-                    sessionalTopUpAttempts++;
-                    if (sessionalTopUpAttempts >= 3)
+                    if (!Validator::isPositiveFloat(amtStr))
                     {
+                        sessionalTopUpAttempts++;
+                        if (sessionalTopUpAttempts >= 3)
+                        {
+                            sessionalTopUpAttempts = 0;
+                            throw InvalidInputException("Error: Excessive failed attempts. Session closed.");
+                        }
+                        throw InvalidInputException("Invalid amount. Please enter a positive number.");
+                    }
+                    float amt = Validator::charToFloat(amtStr);
+                    Patient* p = state->patients.findByID(state->loggedInUserId);
+                    if (p)
+                    {
+                        *p += amt;
+                        FileHandler::saveAllPatients(state->patients);
                         sessionalTopUpAttempts = 0;
-                        dataViewer.show("Error: Excessive failed attempts. Session closed.");
+                        dataViewer.show("Top-Up successful. Balance updated: PKR " + floatToStr(p->getBalance()));
                     }
-                    else
-                    {
-                        dataViewer.show("Invalid amount. Attempts remaining: " + intToStr(3 - sessionalTopUpAttempts));
-                    }
-                    return;
                 }
-                float amt = Validator::charToFloat(amtStr);
-                Patient* p = state->patients.findByID(state->loggedInUserId);
-                if (p)
+                catch (const InvalidInputException& e)
                 {
-                    *p += amt;
-                    FileHandler::saveAllPatients(state->patients);
-                    sessionalTopUpAttempts = 0;
-                    dataViewer.show("Top-Up successful. Balance updated: PKR " + floatToStr(p->getBalance()));
+                    dataViewer.show(e.what());
                 }
             });
         return;
@@ -178,14 +184,14 @@ void PatientScreen::handleEvent(const Event& event, RenderWindow& window, AppSta
                 FileHandler::saveAllPatients(state->patients);
                 FileHandler::saveAllBills(state->bills);
                 dataViewer.show("Payment complete. Available balance: PKR " + floatToStr(p->getBalance()));
-        });
+            });
         return;
     }
 
     if (cancelApptForm.isActive())
     {
         cancelApptForm.handleEvent(event, window, [&](const char** formData)
-        {
+            {
                 int aid = Validator::charToInt(*(formData + 0));
                 Appointment* a = state->appointments.findByID(aid);
                 Patient* p = state->patients.findByID(state->loggedInUserId);
@@ -219,15 +225,15 @@ void PatientScreen::handleEvent(const Event& event, RenderWindow& window, AppSta
                 FileHandler::saveAllBills(state->bills);
 
                 dataViewer.show("Session voided. Retainer fee of PKR " + floatToStr(d ? d->getFee() : 0) + " refunded.");
-        });
+            });
         return;
     }
 
     if (searchSpecForm.isActive())
     {
         searchSpecForm.handleEvent(event, window, [&](const char** formData)
-        {
-                String display = "--- MATCHING SPECIALIST DIRECTORY ---\n";
+            {
+                String display = " MATCHING SPECIALIST DIRECTORY \n";
                 bool found = false;
                 for (int i = 0; i < state->doctors.getSize(); i++)
                 {
@@ -248,14 +254,14 @@ void PatientScreen::handleEvent(const Event& event, RenderWindow& window, AppSta
                     bookState = BookingState::SelectDoc;
                     selectDocForm.show();
                 }
-        });
+            });
         return;
     }
 
     if (selectDocForm.isActive())
     {
         selectDocForm.handleEvent(event, window, [&](const char** formData)
-        {
+            {
                 int did = Validator::charToInt(*(formData + 0));
                 Doctor* d = state->doctors.findByID(did);
                 if (!d)
@@ -269,14 +275,14 @@ void PatientScreen::handleEvent(const Event& event, RenderWindow& window, AppSta
                     bookState = BookingState::EnterDate;
                     bookDateForm.show();
                 }
-        });
+            });
         return;
     }
 
     if (bookDateForm.isActive())
     {
         bookDateForm.handleEvent(event, window, [&](const char** formData)
-        {
+            {
                 const char* dStr = *(formData + 0);
                 if (!Validator::isValidDate(dStr))
                 {
@@ -287,7 +293,7 @@ void PatientScreen::handleEvent(const Event& event, RenderWindow& window, AppSta
                 {
                     selectedDate.copy(dStr);
                     const char* slots[] = { "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00" };
-                    String display = "--- AVAILABLE SLOTS ON " + String(selectedDate.get()) + " ---\n";
+                    String display = " AVAILABLE SLOTS ON " + String(selectedDate.get()) + " \n";
 
                     for (int i = 0; i < 8; i++)
                     {
@@ -311,14 +317,14 @@ void PatientScreen::handleEvent(const Event& event, RenderWindow& window, AppSta
                     bookState = BookingState::EnterTime;
                     bookTimeForm.show();
                 }
-        });
+            });
         return;
     }
 
     if (bookTimeForm.isActive())
     {
         bookTimeForm.handleEvent(event, window, [&](const char** formData)
-        {
+            {
                 const char* tStr = *(formData + 0);
                 if (!Validator::isValidTimeSlot(tStr))
                 {
@@ -327,52 +333,61 @@ void PatientScreen::handleEvent(const Event& event, RenderWindow& window, AppSta
                     return;
                 }
 
-                for (int j = 0; j < state->appointments.getSize(); j++)
+                try
                 {
-                    Appointment* a = state->appointments.getAt(j);
-                    if (a->getDoctorId() == selectedDocId && Validator::myStrEqual(a->getDate(), selectedDate.get()) &&
-                        Validator::myStrEqual(a->getTimeSlot(), tStr) && !Validator::myStrEqual(a->getStatus(), "cancelled"))
+                    for (int j = 0; j < state->appointments.getSize(); j++)
                     {
-                        dataViewer.show("Slot Unavailable! Please select another time.");
-                        bookState = BookingState::None;
-                        return;
+                        Appointment* a = state->appointments.getAt(j);
+                        if (a->getDoctorId() == selectedDocId && Validator::myStrEqual(a->getDate(), selectedDate.get()) &&
+                            Validator::myStrEqual(a->getTimeSlot(), tStr) && !Validator::myStrEqual(a->getStatus(), "cancelled"))
+                        {
+                            throw SlotUnavailableException("Slot Unavailable! Please select another time.");
+                        }
                     }
-                }
 
-                Patient* p = state->patients.findByID(state->loggedInUserId);
-                Doctor* d = state->doctors.findByID(selectedDocId);
+                    Patient* p = state->patients.findByID(state->loggedInUserId);
+                    Doctor* d = state->doctors.findByID(selectedDocId);
 
-                if (p->getBalance() < d->getFee())
-                {
-                    dataViewer.show("Insufficient funds to book this appointment.");
+                    if (p->getBalance() < d->getFee())
+                    {
+                        throw InsufficientFundsException("Insufficient funds to book this appointment.");
+                    }
+
+                    *p -= d->getFee();
+                    int newApptId = state->appointments.getSize() > 0 ? state->appointments.getAt(state->appointments.getSize() - 1)->getId() + 1 : 1;
+                    int newBillId = state->bills.getSize() > 0 ? state->bills.getAt(state->bills.getSize() - 1)->getId() + 1 : 1;
+
+                    Appointment newAppt(newApptId, p->getId(), d->getId(), selectedDate.get(), tStr, "pending");
+                    Bill newBill(newBillId, p->getId(), newApptId, d->getFee(), "unpaid", selectedDate.get());
+
+                    state->appointments.add(newAppt);
+                    state->bills.add(newBill);
+
+                    FileHandler::saveAllPatients(state->patients);
+                    FileHandler::appendAppointment(newAppt);
+                    FileHandler::appendBill(newBill);
+
+                    dataViewer.show("Appointment booked successfully! ID: " + intToStr(newApptId));
                     bookState = BookingState::None;
-                    return;
                 }
-
-                *p -= d->getFee();
-                int newApptId = state->appointments.getSize() > 0 ? state->appointments.getAt(state->appointments.getSize() - 1)->getId() + 1 : 1;
-                int newBillId = state->bills.getSize() > 0 ? state->bills.getAt(state->bills.getSize() - 1)->getId() + 1 : 1;
-
-                Appointment newAppt(newApptId, p->getId(), d->getId(), selectedDate.get(), tStr, "pending");
-                Bill newBill(newBillId, p->getId(), newApptId, d->getFee(), "unpaid", selectedDate.get());
-
-                state->appointments.add(newAppt);
-                state->bills.add(newBill);
-
-                FileHandler::saveAllPatients(state->patients);
-                FileHandler::appendAppointment(newAppt);
-                FileHandler::appendBill(newBill);
-
-                dataViewer.show("Appointment booked successfully! ID: " + intToStr(newApptId));
-                bookState = BookingState::None;
-        });
+                catch (const SlotUnavailableException& e)
+                {
+                    dataViewer.show(e.what());
+                    bookState = BookingState::None;
+                }
+                catch (const InsufficientFundsException& e)
+                {
+                    dataViewer.show(e.what());
+                    bookState = BookingState::None;
+                }
+            });
         return;
     }
 
     for (int i = 0; i < 8; i++)
     {
         (*(buttons + i))->handleEvent(event, window, [&, i]()
-        {
+            {
                 if (i == 0)
                 {
                     bookState = BookingState::SearchSpec;
@@ -380,7 +395,7 @@ void PatientScreen::handleEvent(const Event& event, RenderWindow& window, AppSta
                 }
                 else if (i == 1)
                 {
-                    String disp = "--- ACTIVE BOOKINGS ---\n";
+                    String disp = " ACTIVE BOOKINGS \n";
                     int count = 0;
                     for (int j = 0; j < state->appointments.getSize(); j++)
                     {
@@ -435,7 +450,7 @@ void PatientScreen::handleEvent(const Event& event, RenderWindow& window, AppSta
                         }
                     }
 
-                    String display = "--- MY APPOINTMENTS ---\n";
+                    String display = " MY APPOINTMENTS \n";
                     for (int j = 0; j < count; j++)
                     {
                         Doctor* d = state->doctors.findByID((*(myAppts + j))->getDoctorId());
@@ -478,20 +493,20 @@ void PatientScreen::handleEvent(const Event& event, RenderWindow& window, AppSta
                         }
                     }
 
-                    String display = "--- MEDICAL CASE RECORDS ---\n";
+                    String display = " MEDICAL CASE RECORDS \n";
                     for (int j = 0; j < count; j++)
                     {
                         Doctor* d = state->doctors.findByID((*(myPrescs + j))->getDoctorId());
                         display += "Date: " + String((*(myPrescs + j))->getDate()) + " | Dr. " + String(d ? d->getName() : "Unknown") + "\n" +
                             "Meds: " + String((*(myPrescs + j))->getMedicines()) + "\n" +
-                            "Notes: " + String((*(myPrescs + j))->getNotes()) + "\n-------------------------\n";
+                            "Notes: " + String((*(myPrescs + j))->getNotes()) + "\n-\n";
                     }
                     dataViewer.show(display);
                     delete[] myPrescs;
                 }
                 else if (i == 4)
                 {
-                    String display = "--- INVOICES RECORD ---\n";
+                    String display = " INVOICES RECORD \n";
                     float outstanding = 0.0f;
                     int count = 0;
                     for (int j = 0; j < state->bills.getSize(); j++)
@@ -519,7 +534,7 @@ void PatientScreen::handleEvent(const Event& event, RenderWindow& window, AppSta
                 }
                 else if (i == 5)
                 {
-                    String display = "--- UNPAID INVOICES ---\n";
+                    String display = " UNPAID INVOICES \n";
                     bool found = false;
                     for (int j = 0; j < state->bills.getSize(); j++) {
                         Bill* b = state->bills.getAt(j);
@@ -548,7 +563,7 @@ void PatientScreen::handleEvent(const Event& event, RenderWindow& window, AppSta
                     appState.loggedInUserId = -1;
                     appState.currentScreen = ScreenType::Login;
                 }
-        });
+            });
     }
 }
 

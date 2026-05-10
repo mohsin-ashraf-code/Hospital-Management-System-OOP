@@ -1,6 +1,6 @@
 #pragma once
 #include "Person.h"
-
+#include <iostream>
 class Doctor : public Person 
 {
 private:
@@ -14,4 +14,6 @@ public:
     const char* getSpecialization() const;
     float getFee() const;
     bool operator==(int targetId) const;
+    void display() const override;
+    const char* getRole() const override;
 };

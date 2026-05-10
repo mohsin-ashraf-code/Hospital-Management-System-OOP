@@ -1,5 +1,6 @@
 #pragma once
 #include "Person.h"
+#include <iostream>
 
 class Patient : public Person 
 {
@@ -22,4 +23,7 @@ public:
     bool operator==(int targetId) const;
     void operator+=(float amount);
     void operator-=(float amount);
+
+    void display() const override;
+    const char* getRole() const override;
 };

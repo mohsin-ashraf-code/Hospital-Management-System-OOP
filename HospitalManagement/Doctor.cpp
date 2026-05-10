@@ -22,3 +22,13 @@ bool Doctor::operator==(int targetId) const
 {
     return id == targetId;
 }
+
+void Doctor::display() const
+{
+   
+}
+
+const char* Doctor::getRole() const
+{
+    return "Doctor";
+}

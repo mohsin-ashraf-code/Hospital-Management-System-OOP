@@ -18,5 +18,8 @@ public:
     const char* getContact() const;
     const char* getPassword() const;
 
+    virtual void display() const = 0;
+    virtual const char* getRole() const = 0;
+
     virtual ~Person();
 };

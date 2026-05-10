@@ -48,3 +48,13 @@ void Patient::operator-=(float amount)
 { 
     balance -= amount; 
 }
+
+void Patient::display() const
+{
+    
+}
+
+const char* Patient::getRole() const
+{
+    return "Patient";
+}
